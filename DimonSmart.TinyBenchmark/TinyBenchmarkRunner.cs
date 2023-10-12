@@ -1,15 +1,17 @@
-﻿using System.Reflection;
+﻿using System.Diagnostics;
+using System.Reflection;
 
 namespace DimonSmart.TinyBenchmark;
 
 public class TinyBenchmarkRunner
 {
-    public int MaxFunctionRunTImeMilliseconds { get; private set; } = 1000;
-   
-    public IReadOnlyCollection<MethodExecutionResults> Results { get; private set; }
     private TinyBenchmarkRunner()
     {
     }
+
+    public int MaxFunctionRunTImeMilliseconds { get; } = 1000;
+
+    public IReadOnlyCollection<MethodExecutionResults> Results { get; }
 
     public static TinyBenchmarkRunner Create()
     {
@@ -18,41 +20,36 @@ public class TinyBenchmarkRunner
 
     public void Run()
     {
-        Console.WriteLine("Running TinyBenchmarks...");
         var results = new List<MethodExecutionResults>();
-        var classesUnderTest = AttributeUtility.GetClassesUnderTest();
+        var methodExecutionInfos = GetMethodExecutionInfos();
 
+        foreach (var methodExecutionInfo in methodExecutionInfos)
+        {
+            var times = MeasureAndRunAction(methodExecutionInfo.Action, MaxFunctionRunTImeMilliseconds);
+            var result = new MethodExecutionResults(methodExecutionInfo, times);
+            results.Add(result);
+        }
+    }
+
+    private static List<MethodExecutionInfo> GetMethodExecutionInfos()
+    {
+        var classesUnderTest = AttributeUtility.GetClassesUnderTest();
+        var executionInfos = new List<MethodExecutionInfo>();
         foreach (var classUnderTestType in classesUnderTest)
         {
-            Console.WriteLine($"Benchmarking class: {classUnderTestType.Name}");
-
             var classUnderTestProperty = AttributeUtility.FindClassUnderTestParameterProperty(classUnderTestType);
             var parameterAttribute = AttributeUtility.GetParameterAttributeFromProperty(classUnderTestProperty);
-
             var methodsUnderTest = AttributeUtility.GetMethodsWithTinyBenchmarkAttribute(classUnderTestType);
-
-            // Instantiate the class under test
             var classForTest = Activator.CreateInstance(classUnderTestType);
 
             foreach (var methodUnderTest in methodsUnderTest)
             {
-                Console.WriteLine($"    Benchmarking method: {methodUnderTest.Name}");
-                var methodExecutionInfos = GetMethodExecutionInfos(parameterAttribute, methodUnderTest, classForTest,
-                    classUnderTestType);
-
-                foreach (var methodExecutionInfo in methodExecutionInfos)
-                {
-                    if (parameterAttribute != null)
-                    {
-                        Console.WriteLine(@$"         Argument: {methodExecutionInfo.Parameter ?? "null"}");
-                    }
-
-                    var times = MeasureAndRunAction(methodExecutionInfo.Action, MaxFunctionRunTImeMilliseconds);
-                    var result = new MethodExecutionResults(methodExecutionInfo, times);
-                    results.Add(result);
-                }
+                executionInfos.AddRange(
+                    GetMethodExecutionInfos(
+                        parameterAttribute, methodUnderTest, classForTest, classUnderTestType));
             }
         }
+        return executionInfos;
     }
 
     public static List<TimeSpan> MeasureAndRunAction(Action action, int maxTotalMilliseconds, int minExecutionCount = 1)
@@ -65,10 +62,7 @@ public class TinyBenchmarkRunner
         executionTimes.Add(firstRunTime);
         PrepareRun();
 
-        for (var i = 0; i < maxIterations; i++)
-        {
-            executionTimes.Add(MeasureExecutionTime(action));
-        }
+        for (var i = 0; i < maxIterations; i++) executionTimes.Add(MeasureExecutionTime(action));
 
         return executionTimes;
     }
@@ -82,7 +76,7 @@ public class TinyBenchmarkRunner
 
     public static TimeSpan MeasureExecutionTime(Action action)
     {
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        var stopwatch = Stopwatch.StartNew();
         action();
         stopwatch.Stop();
         return stopwatch.Elapsed;
@@ -116,6 +110,6 @@ public class TinyBenchmarkRunner
     {
         var parameters = parameterAttributeValue == null ? null : new[] { parameterAttributeValue };
         var action = () => { methodUnderTest.Invoke(classForTest, parameters); };
-        return new MethodExecutionInfo (classUnderTestType,  methodUnderTest, parameterAttributeValue, action);
+        return new MethodExecutionInfo(classUnderTestType, methodUnderTest, parameterAttributeValue, action);
     }
 }
