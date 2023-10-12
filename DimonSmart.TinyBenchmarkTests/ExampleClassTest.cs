@@ -16,6 +16,6 @@ public class ExampleClassTest
     [TinyBenchmark]
     public void Function2(int parameter)
     {
-        Debug.WriteLine($"{nameof(Function1)}:{parameter}");
+        Debug.WriteLine($"{nameof(Function2)}:{parameter}");
     }
 }

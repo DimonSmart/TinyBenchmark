@@ -4,6 +4,9 @@ namespace DimonSmart.TinyBenchmark;
 
 public class TinyBenchmarkRunner
 {
+    public int MaxFunctionRunTImeMilliseconds { get; private set; } = 1000;
+   
+    public IReadOnlyCollection<MethodExecutionResults> Results { get; private set; }
     private TinyBenchmarkRunner()
     {
     }
@@ -16,6 +19,7 @@ public class TinyBenchmarkRunner
     public void Run()
     {
         Console.WriteLine("Running TinyBenchmarks...");
+        var results = new List<MethodExecutionResults>();
         var classesUnderTest = AttributeUtility.GetClassesUnderTest();
 
         foreach (var classUnderTestType in classesUnderTest)
@@ -42,11 +46,48 @@ public class TinyBenchmarkRunner
                     {
                         Console.WriteLine(@$"         Argument: {methodExecutionInfo.Parameter ?? "null"}");
                     }
-                    // Benchmark method execution here
+
+                    var times = MeasureAndRunAction(methodExecutionInfo.Action, MaxFunctionRunTImeMilliseconds);
+                    var result = new MethodExecutionResults(methodExecutionInfo, times);
+                    results.Add(result);
                 }
             }
         }
     }
+
+    public static List<TimeSpan> MeasureAndRunAction(Action action, int maxTotalMilliseconds, int minExecutionCount = 1)
+    {
+        var firstRunTime = MeasureExecutionTime(action);
+        var maxIterations = (int)(maxTotalMilliseconds / firstRunTime.TotalMilliseconds);
+
+        maxIterations = Math.Max(maxIterations, minExecutionCount);
+        var executionTimes = new List<TimeSpan>(maxIterations + 1);
+        executionTimes.Add(firstRunTime);
+        PrepareRun();
+
+        for (var i = 0; i < maxIterations; i++)
+        {
+            executionTimes.Add(MeasureExecutionTime(action));
+        }
+
+        return executionTimes;
+    }
+
+    private static void PrepareRun()
+    {
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+    }
+
+    public static TimeSpan MeasureExecutionTime(Action action)
+    {
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        action();
+        stopwatch.Stop();
+        return stopwatch.Elapsed;
+    }
+
 
     private static List<MethodExecutionInfo> GetMethodExecutionInfos(
         TinyBenchmarkParameterAttribute? parameterAttribute,
@@ -75,12 +116,6 @@ public class TinyBenchmarkRunner
     {
         var parameters = parameterAttributeValue == null ? null : new[] { parameterAttributeValue };
         var action = () => { methodUnderTest.Invoke(classForTest, parameters); };
-        return new MethodExecutionInfo
-        {
-            ClassType = classUnderTestType,
-            MethodInfo = methodUnderTest,
-            Parameter = parameterAttributeValue,
-            Action = action
-        };
+        return new MethodExecutionInfo (classUnderTestType,  methodUnderTest, parameterAttributeValue, action);
     }
 }
