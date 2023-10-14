@@ -2,4 +2,4 @@
 
 namespace DimonSmart.TinyBenchmark;
 
-public record MethodExecutionInfo(Type ClassTyp, MethodInfo MethodInfo, object? Parameter, Action Action);
+public record MethodExecutionInfo(Type ClassType, MethodInfo MethodInfo, object? Parameter, Action Action);

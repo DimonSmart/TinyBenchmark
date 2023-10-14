@@ -37,8 +37,10 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
 
     public ITinyBenchmarkRunner SaveRawResultsData()
     {
-        var flattenedResults = _data.Results.SelectMany(result => result.Times,
-                (result, time) => new FlatMethodExecutionResult(result.Method.ClassTyp.Name,
+        var flattenedResults =
+            _data.Results.SelectMany(result => result.Times,
+                (result, time) =>
+                    new FlatMethodExecutionResult(result.Method.ClassType.Name,
                     result.Method.MethodInfo.Name,
                     result.Method.Parameter, time))
             .OrderBy(c => c.ClassName)
