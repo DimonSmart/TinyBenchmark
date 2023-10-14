@@ -10,6 +10,7 @@ public class TinyBenchmarkTestRunnerTest
     {
         TinyBenchmarkRunner
             .Create()
-            .Run();
+            .Run()
+            .SaveRawResultsData();
     }
 }

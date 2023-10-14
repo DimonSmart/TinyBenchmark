@@ -11,11 +11,18 @@ public class ExampleClassTest
     public void Function1(int parameter)
     {
         Debug.WriteLine($"{nameof(Function1)}:{parameter}");
+        var guid = Guid.NewGuid();
+        Debug.WriteLine($"Guid:{guid}");
     }
 
     [TinyBenchmark]
     public void Function2(int parameter)
     {
         Debug.WriteLine($"{nameof(Function2)}:{parameter}");
+        for (var i = 0; i < parameter; i++)
+        {
+            var guid = Guid.NewGuid();
+            Debug.WriteLine($"Guid:{guid}");
+        }
     }
 }

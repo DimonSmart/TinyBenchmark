@@ -1,35 +1,60 @@
-﻿using System.Diagnostics;
+﻿using System.Collections;
+using System.Diagnostics;
+using System.Globalization;
 using System.Reflection;
+using CsvHelper;
+using CsvHelper.Configuration;
 
 namespace DimonSmart.TinyBenchmark;
 
-public class TinyBenchmarkRunner
+public class TinyBenchmarkRunner : ITinyBenchmarkRunner
 {
+    private BenchmarkData _data = new();
+
     private TinyBenchmarkRunner()
     {
     }
 
-    public int MaxFunctionRunTImeMilliseconds { get; } = 1000;
+    public ITinyBenchmarkRunner Reset()
+    {
+        _data = new BenchmarkData();
+        return this;
+    }
 
-    public IReadOnlyCollection<MethodExecutionResults> Results { get; }
+    public ITinyBenchmarkRunner Run()
+    {
+        var methodExecutionInfos = GetMethodExecutionInfos();
+
+        foreach (var methodExecutionInfo in methodExecutionInfos)
+        {
+            var times = MeasureAndRunAction(methodExecutionInfo.Action, _data.MaxFunctionRunTImeMilliseconds);
+            var result = new MethodExecutionResults(methodExecutionInfo, times);
+            _data.Results.Add(result);
+        }
+
+        return this;
+    }
+
+    public ITinyBenchmarkRunner SaveRawResultsData()
+    {
+        var flattenedResults = _data.Results.SelectMany(result => result.Times,
+                (result, time) => new FlatMethodExecutionResult(result.Method.ClassTyp.Name,
+                    result.Method.MethodInfo.Name,
+                    result.Method.Parameter, time))
+            .OrderBy(c => c.ClassName)
+            .ThenBy(f => f.MethodName)
+            .ThenBy(t => t.Time);
+        using var writer = new StreamWriter("MethodExecutionResults.csv");
+        using var csv = new CsvWriter(writer, new CsvConfiguration(CultureInfo.InvariantCulture));
+        csv.WriteRecords((IEnumerable)flattenedResults);
+        return this;
+    }
 
     public static TinyBenchmarkRunner Create()
     {
         return new TinyBenchmarkRunner();
     }
 
-    public void Run()
-    {
-        var results = new List<MethodExecutionResults>();
-        var methodExecutionInfos = GetMethodExecutionInfos();
-
-        foreach (var methodExecutionInfo in methodExecutionInfos)
-        {
-            var times = MeasureAndRunAction(methodExecutionInfo.Action, MaxFunctionRunTImeMilliseconds);
-            var result = new MethodExecutionResults(methodExecutionInfo, times);
-            results.Add(result);
-        }
-    }
 
     private static List<MethodExecutionInfo> GetMethodExecutionInfos()
     {
@@ -49,20 +74,22 @@ public class TinyBenchmarkRunner
                         parameterAttribute, methodUnderTest, classForTest, classUnderTestType));
             }
         }
+
         return executionInfos;
     }
 
-    public static List<TimeSpan> MeasureAndRunAction(Action action, int maxTotalMilliseconds, int minExecutionCount = 1)
+    public List<TimeSpan> MeasureAndRunAction(Action action, int maxTotalMilliseconds)
     {
         var firstRunTime = MeasureExecutionTime(action);
-        var maxIterations = (int)(maxTotalMilliseconds / firstRunTime.TotalMilliseconds);
+        var iterations = (int)(maxTotalMilliseconds / firstRunTime.TotalMilliseconds);
 
-        maxIterations = Math.Max(maxIterations, minExecutionCount);
-        var executionTimes = new List<TimeSpan>(maxIterations + 1);
+        iterations = Math.Max(iterations, _data.MinFunctionExecutionCount);
+        iterations = Math.Min(iterations, _data.MaxFunctionExecutionCount);
+        var executionTimes = new List<TimeSpan>(iterations + 1);
         executionTimes.Add(firstRunTime);
         PrepareRun();
 
-        for (var i = 0; i < maxIterations; i++) executionTimes.Add(MeasureExecutionTime(action));
+        for (var i = 0; i < iterations; i++) executionTimes.Add(MeasureExecutionTime(action));
 
         return executionTimes;
     }
@@ -81,7 +108,6 @@ public class TinyBenchmarkRunner
         stopwatch.Stop();
         return stopwatch.Elapsed;
     }
-
 
     private static List<MethodExecutionInfo> GetMethodExecutionInfos(
         TinyBenchmarkParameterAttribute? parameterAttribute,
