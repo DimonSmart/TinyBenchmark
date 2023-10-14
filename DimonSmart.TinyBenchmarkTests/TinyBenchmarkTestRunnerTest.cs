@@ -14,7 +14,9 @@ public class TinyBenchmarkTestRunnerTest
             .Run()
             .SaveRawResultsData()
             .WithGraphExporter()
-            .SortTimes()
+            .OrderTimes()
+            .ExportAllRawGraph()
+            .OrderTimes(SortDirection.Unordered)
             .ExportAllRawGraph();
 
 

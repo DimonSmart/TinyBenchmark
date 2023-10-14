@@ -33,7 +33,7 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         return this;
     }
 
-    public IGraphExporter SortTimes(SortDirection direction)
+    public IGraphExporter OrderTimes(SortDirection direction)
     {
         SortTimesDirection = direction;
         return this;
@@ -106,15 +106,15 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
             dataY = dataY.OrderByDescending(t => t).ToArray();
         }
 
-        var myPlot = new Plot(Width, Height);
-        myPlot.XLabel("Run number");
-        myPlot.YLabel("Time, μs");
-        myPlot.Title($"Raw data. {className}.{methodName}({rmExecutionResults.Method.Parameter})");
-        myPlot.AddScatter(dataX, dataY);
-
+        var plot = new Plot(Width, Height);
+        plot.XLabel("Run number");
+        plot.YLabel("Time, μs");
+        plot.Title($"Raw data. {className}.{methodName}({rmExecutionResults.Method.Parameter})");
+        plot.AddScatter(dataX, dataY, label:"Raw timings");
+        plot.Legend();
         var fileName =
             SubstituteFilenameTemplate(FileNameTemplate, className, methodName, parameter, SortTimesDirection);
-        myPlot.SaveFig(fileName);
+        plot.SaveFig(fileName);
         return this;
     }
 

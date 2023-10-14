@@ -109,6 +109,8 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         GC.Collect();
         GC.WaitForPendingFinalizers();
         GC.Collect();
+        GC.WaitForFullGCComplete();
+        GC.Collect();
     }
 
     public static TimeSpan MeasureExecutionTime(Action action)
