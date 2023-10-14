@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Reflection;
 using CsvHelper;
 using CsvHelper.Configuration;
+using DimonSmart.TinyBenchmark.Exporters;
 
 namespace DimonSmart.TinyBenchmark;
 
@@ -39,24 +40,31 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
     {
         var flattenedResults =
             _data.Results.SelectMany(result => result.Times,
-                (result, time) =>
-                    new FlatMethodExecutionResult(result.Method.ClassType.Name,
-                    result.Method.MethodInfo.Name,
-                    result.Method.Parameter, time))
-            .OrderBy(c => c.ClassName)
-            .ThenBy(f => f.MethodName)
-            .ThenBy(t => t.Time);
+                    (result, time) =>
+                        new FlatMethodExecutionResult(
+                            result.Method.ClassType.Name,
+                            result.Method.MethodInfo.Name,
+                            result.Method.Parameter,
+                            time))
+                .OrderBy(c => c.ClassName)
+                .ThenBy(f => f.MethodName)
+                .ThenBy(t => t.Time);
         using var writer = new StreamWriter("MethodExecutionResults.csv");
         using var csv = new CsvWriter(writer, new CsvConfiguration(CultureInfo.InvariantCulture));
+        csv.Context.RegisterClassMap<FlatMethodExecutionResultMap>();
         csv.WriteRecords((IEnumerable)flattenedResults);
         return this;
+    }
+
+    public IGraphExporter WithGraphExporter()
+    {
+        return new GraphExporter(this, _data);
     }
 
     public static TinyBenchmarkRunner Create()
     {
         return new TinyBenchmarkRunner();
     }
-
 
     private static List<MethodExecutionInfo> GetMethodExecutionInfos()
     {
@@ -89,7 +97,7 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         iterations = Math.Min(iterations, _data.MaxFunctionExecutionCount);
         var executionTimes = new List<TimeSpan>(iterations + 1);
         executionTimes.Add(firstRunTime);
-        PrepareRun();
+
 
         for (var i = 0; i < iterations; i++) executionTimes.Add(MeasureExecutionTime(action));
 
@@ -105,9 +113,12 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
 
     public static TimeSpan MeasureExecutionTime(Action action)
     {
+        PrepareRun();
+        GC.TryStartNoGCRegion(100 * 1024 * 1024);
         var stopwatch = Stopwatch.StartNew();
         action();
         stopwatch.Stop();
+        GC.EndNoGCRegion();
         return stopwatch.Elapsed;
     }
 
@@ -139,5 +150,24 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         var parameters = parameterAttributeValue == null ? null : new[] { parameterAttributeValue };
         var action = () => { methodUnderTest.Invoke(classForTest, parameters); };
         return new MethodExecutionInfo(classUnderTestType, methodUnderTest, parameterAttributeValue, action);
+    }
+
+    public ITinyBenchmarkRunner WithRunCountLimits(int minFunctionExecutionCount, int maxFunctionExecutionCount)
+    {
+        if (minFunctionExecutionCount < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(minFunctionExecutionCount), minFunctionExecutionCount,
+                "Must be greater then 1");
+        }
+
+        if (minFunctionExecutionCount > maxFunctionExecutionCount)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maxFunctionExecutionCount), maxFunctionExecutionCount,
+                $"Must be greater then {nameof(minFunctionExecutionCount)}");
+        }
+
+        _data.MinFunctionExecutionCount = minFunctionExecutionCount;
+        _data.MaxFunctionExecutionCount = maxFunctionExecutionCount;
+        return this;
     }
 }

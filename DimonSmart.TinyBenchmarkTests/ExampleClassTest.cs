@@ -5,14 +5,14 @@ namespace DimonSmart.TinyBenchmarkTests;
 
 public class ExampleClassTest
 {
-    [TinyBenchmarkParameter(1, 10, 20)] public int BenchmarkParameter { get; set; }
+    [TinyBenchmarkParameter(1, 10, 20, 100)]
+    public int BenchmarkParameter { get; set; }
 
     [TinyBenchmark]
     public void Function1(int parameter)
     {
         Debug.WriteLine($"{nameof(Function1)}:{parameter}");
         var guid = Guid.NewGuid();
-        Debug.WriteLine($"Guid:{guid}");
     }
 
     [TinyBenchmark]
@@ -22,7 +22,6 @@ public class ExampleClassTest
         for (var i = 0; i < parameter; i++)
         {
             var guid = Guid.NewGuid();
-            Debug.WriteLine($"Guid:{guid}");
         }
     }
 }

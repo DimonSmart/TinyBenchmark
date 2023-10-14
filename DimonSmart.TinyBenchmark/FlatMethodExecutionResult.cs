@@ -1,6 +1,7 @@
-﻿using CsvHelper.Configuration.Attributes;
+﻿namespace DimonSmart.TinyBenchmark;
 
-namespace DimonSmart.TinyBenchmark;
-
-public record FlatMethodExecutionResult(string ClassName, string MethodName, [Name("Parameter")] object? Parameter,
+public record FlatMethodExecutionResult(
+    string ClassName,
+    string MethodName,
+    object? Parameter,
     TimeSpan Time);
