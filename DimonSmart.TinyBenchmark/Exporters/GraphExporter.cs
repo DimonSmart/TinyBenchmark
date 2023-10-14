@@ -74,7 +74,7 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         }
 
         var parametrizedMethod = methods
-            .Where(f => f.Method.Parameter == null && f.Method.Parameter == null ||
+            .Where(f => (f.Method.Parameter == null && f.Method.Parameter == null) ||
                         f.Method.Parameter.Equals(parameter));
 
         var executionResults = parametrizedMethod.Single();
@@ -110,7 +110,7 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         plot.XLabel("Run number");
         plot.YLabel("Time, μs");
         plot.Title($"Raw data. {className}.{methodName}({rmExecutionResults.Method.Parameter})");
-        plot.AddScatter(dataX, dataY, label:"Raw timings");
+        plot.AddScatter(dataX, dataY, label: "Raw timings");
         plot.Legend();
         var fileName =
             SubstituteFilenameTemplate(FileNameTemplate, className, methodName, parameter, SortTimesDirection);
