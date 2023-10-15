@@ -78,6 +78,7 @@ public class TinyBenchmarkTestRunnerTest
 
 ### Functions comparision
 
-![Function comparision](https://github.com/DimonSmart/TinyBenchmark/blob/main/Compare-ExampleClassTest.png?raw=true)
+![Function comparision](https://github.com/DimonSmart/TinyBenchmark/blob/main/DimonSmart.TinyBenchmark/Docs/Images/Compare-ExampleClassTest.png?raw=true)
+
 
 
