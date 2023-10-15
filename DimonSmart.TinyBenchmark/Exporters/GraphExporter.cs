@@ -5,31 +5,28 @@ namespace DimonSmart.TinyBenchmark.Exporters;
 
 public class GraphExporter : ExporterBaseClass, IGraphExporter
 {
-    private readonly BenchmarkData _data;
-
     private readonly ITinyBenchmarkRunner _tinyBenchmarkRunner;
 
-    public GraphExporter(ITinyBenchmarkRunner tinyBenchmarkRunner, BenchmarkData data)
+    public GraphExporter(ITinyBenchmarkRunner tinyBenchmarkRunner, BenchmarkData data) : base(tinyBenchmarkRunner, data)
     {
         _tinyBenchmarkRunner = tinyBenchmarkRunner;
-        _data = data;
         BeforeExport();
     }
 
     public SortDirection SortTimesDirection { get; set; } = Unordered;
-
+    public string ComparisionFileNameTemplate { get; set; } = "Compare-{ClassName}.png";
     public int Width { get; private set; } = 800;
     public int Height { get; private set; } = 600;
-    public string FileNameTemplate { get; set; } = "{ClassName}-{MethodName}-{Parameter}-{Sorted}.png";
+    public string RawDataFileNameTemplate { get; set; } = "Raw-{ClassName}-{MethodName}-{Parameter}-{Sorted}.png";
 
     IGraphExporter IGraphExporter.GraphSize(int width, int height)
     {
         return GraphSize(width, height);
     }
 
-    public IGraphExporter SetFileNameTemplate(string fileNameTemplate)
+    public IGraphExporter SetRawDataFileNameTemplate(string fileNameTemplate)
     {
-        FileNameTemplate = fileNameTemplate;
+        RawDataFileNameTemplate = fileNameTemplate;
         return this;
     }
 
@@ -39,14 +36,9 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         return this;
     }
 
-    public ITinyBenchmarkRunner Back()
-    {
-        return _tinyBenchmarkRunner;
-    }
-
     public IGraphExporter ExportAllRawGraph()
     {
-        foreach (var methodExecutionResult in _data.Results)
+        foreach (var methodExecutionResult in Data.Results)
         {
             ExportRawGraph(methodExecutionResult);
         }
@@ -56,7 +48,7 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
 
     public IGraphExporter ExportRawGraph(string className, string methodName, object? parameter)
     {
-        var classes = _data
+        var classes = Data
             .Results
             .Where(c => c.Method.ClassType.Name == className)
             .ToList();
@@ -82,6 +74,50 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         return this;
     }
 
+    public IGraphExporter ExportAllFunctionsCompareGraph(string className)
+    {
+        var classFunctions = Data
+            .Results
+            .Where(c => c.Method.ClassType.Name == className)
+            .ToList();
+        var byFunction = classFunctions
+            .GroupBy(g => g.Method.MethodInfo.Name, v => v).ToList();
+
+        var classRunParameters = byFunction.First()
+            .Select(f => f.Method.Parameter)
+            //.Distinct()
+            .ToList();
+        var plot = new Plot(Width, Height);
+        plot.XLabel("Run number");
+
+        double[] dataX;
+        string[] labelX;
+        if (classRunParameters.Count == 0)
+        {
+            dataX = new double[] { 1 };
+            labelX = new[] { "1" };
+        }
+        else
+        {
+            dataX = classRunParameters.Select((value, index) => (double)index).ToArray();
+            labelX = classRunParameters.Select((value, index) => value?.ToString()).ToArray();
+        }
+
+        plot.XAxis.ManualTickPositions(dataX, labelX);
+
+        foreach (var function in byFunction)
+        {
+            var dataY = function
+                .Select(f => TimeSpanUtils.Get50Percentile(f.Times).TotalMicroseconds).ToArray();
+            plot.AddScatter(dataX, dataY, label: $"{function.Key}");
+        }
+
+        plot.Legend();
+        var fileName = SubstituteComparisionFilenameTemplate(ComparisionFileNameTemplate, className);
+        plot.SaveFig(fileName);
+        return this;
+    }
+
     private GraphExporter GraphSize(int width, int height)
     {
         Width = width;
@@ -94,17 +130,14 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         var className = rmExecutionResults.Method.ClassType.Name;
         var methodName = rmExecutionResults.Method.MethodInfo.Name;
         var parameter = rmExecutionResults.Method.Parameter;
-        var dataX = rmExecutionResults.Times.Select((time, index) => (double)(index + 1)).ToArray();
+        var dataX = rmExecutionResults.Times.Select((_, index) => (double)(index + 1)).ToArray();
         var dataY = rmExecutionResults.Times.Select(t => t.TotalMicroseconds).ToArray();
-        if (SortTimesDirection == Ascending)
+        dataY = SortTimesDirection switch
         {
-            dataY = dataY.OrderBy(t => t).ToArray();
-        }
-
-        if (SortTimesDirection == Descending)
-        {
-            dataY = dataY.OrderByDescending(t => t).ToArray();
-        }
+            Ascending => dataY.OrderBy(t => t).ToArray(),
+            Descending => dataY.OrderByDescending(t => t).ToArray(),
+            _ => dataY
+        };
 
         var plot = new Plot(Width, Height);
         plot.XLabel("Run number");
@@ -113,7 +146,7 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         plot.AddScatter(dataX, dataY, label: "Raw timings");
         plot.Legend();
         var fileName =
-            SubstituteFilenameTemplate(FileNameTemplate, className, methodName, parameter, SortTimesDirection);
+            SubstituteFilenameTemplate(RawDataFileNameTemplate, className, methodName, parameter, SortTimesDirection);
         plot.SaveFig(fileName);
         return this;
     }
@@ -125,6 +158,12 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
             .Replace("{className}", className, StringComparison.OrdinalIgnoreCase)
             .Replace("{parameter}", parameter?.ToString() ?? string.Empty, StringComparison.OrdinalIgnoreCase)
             .Replace("{sorted}", sorted.ToString(), StringComparison.OrdinalIgnoreCase);
+        return Path.Combine(ResultsFolder, fileName);
+    }
+
+    private string SubstituteComparisionFilenameTemplate(string template, string className)
+    {
+        var fileName = template.Replace("{className}", className, StringComparison.OrdinalIgnoreCase);
         return Path.Combine(ResultsFolder, fileName);
     }
 }

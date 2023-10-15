@@ -67,8 +67,8 @@ public static class AttributeUtility
         return parameterProperty;
     }
 
-    public static TinyBenchmarkParameterAttribute? GetParameterAttributeFromProperty(PropertyInfo? property)
+    public static object[]? GetParametersFromAttribute(PropertyInfo? property)
     {
-        return property?.GetCustomAttribute<TinyBenchmarkParameterAttribute>();
+        return property?.GetCustomAttribute<TinyBenchmarkParameterAttribute>()?.Values;
     }
 }

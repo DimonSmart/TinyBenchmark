@@ -2,7 +2,7 @@
 
 public class BenchmarkData
 {
-    public int MaxFunctionRunTImeMilliseconds { get; private set; } = 1000;
+    public int MaxFunctionRunTImeMilliseconds { get; internal set; } = 5000;
 
     public int MinFunctionExecutionCount { get; internal set; } = 1;
 

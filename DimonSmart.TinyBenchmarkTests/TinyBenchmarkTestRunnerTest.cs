@@ -10,14 +10,16 @@ public class TinyBenchmarkTestRunnerTest
     {
         TinyBenchmarkRunner
             .Create()
-            .WithRunCountLimits(10, 1000)
+            .WithRunCountLimits(20, 1000)
             .Run()
-            .SaveRawResultsData()
+            .WithCsvExporter()
+            .SaveRawResultsDataAsCsv()
             .WithGraphExporter()
             .OrderTimes()
             .ExportAllRawGraph()
             .OrderTimes(SortDirection.Unordered)
-            .ExportAllRawGraph();
+            .ExportAllRawGraph()
+            .ExportAllFunctionsCompareGraph(nameof(ExampleClassTest));
 
 
         // .ExportRawGraph(nameof(ExampleClassTest), nameof(ExampleClassTest.Function2), 10);

@@ -2,15 +2,15 @@
 
 namespace DimonSmart.TinyBenchmark.Exporters;
 
-public interface IGraphExporter
+public interface IGraphExporter : IResultProcessor
 {
     int Width { get; }
     int Height { get; }
-    string FileNameTemplate { get; }
+    string RawDataFileNameTemplate { get; }
     IGraphExporter GraphSize(int width, int height);
-    IGraphExporter SetFileNameTemplate(string fileNameTemplate);
+    IGraphExporter SetRawDataFileNameTemplate(string fileNameTemplate);
     IGraphExporter OrderTimes(SortDirection direction = Ascending);
-    ITinyBenchmarkRunner Back();
     IGraphExporter ExportAllRawGraph();
     IGraphExporter ExportRawGraph(string className, string methodName, object? parameter);
+    IGraphExporter ExportAllFunctionsCompareGraph(string className);
 }

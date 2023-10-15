@@ -1,8 +1,14 @@
 ﻿namespace DimonSmart.TinyBenchmark.Exporters;
 
-public class ExporterBaseClass
+public class ExporterBaseClass : ResultProcessor
 {
     private bool _directoryCreated;
+
+    public ExporterBaseClass(ITinyBenchmarkRunner tinyBenchmarkRunner, BenchmarkData data) :
+        base(tinyBenchmarkRunner, data)
+    {
+    }
+
     public string ResultsFolder { get; set; } = "TinyBenchmark";
 
     protected void BeforeExport()

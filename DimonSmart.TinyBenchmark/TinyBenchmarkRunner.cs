@@ -1,9 +1,5 @@
-﻿using System.Collections;
-using System.Diagnostics;
-using System.Globalization;
+﻿using System.Diagnostics;
 using System.Reflection;
-using CsvHelper;
-using CsvHelper.Configuration;
 using DimonSmart.TinyBenchmark.Exporters;
 
 namespace DimonSmart.TinyBenchmark;
@@ -22,7 +18,7 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         return this;
     }
 
-    public ITinyBenchmarkRunner Run()
+    public IResultProcessor Run()
     {
         var methodExecutionInfos = GetMethodExecutionInfos();
 
@@ -33,33 +29,9 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
             _data.Results.Add(result);
         }
 
-        return this;
+        return new ResultProcessor(this, _data);
     }
 
-    public ITinyBenchmarkRunner SaveRawResultsData()
-    {
-        var flattenedResults =
-            _data.Results.SelectMany(result => result.Times,
-                    (result, time) =>
-                        new FlatMethodExecutionResult(
-                            result.Method.ClassType.Name,
-                            result.Method.MethodInfo.Name,
-                            result.Method.Parameter,
-                            time))
-                .OrderBy(c => c.ClassName)
-                .ThenBy(f => f.MethodName)
-                .ThenBy(t => t.Time);
-        using var writer = new StreamWriter("MethodExecutionResults.csv");
-        using var csv = new CsvWriter(writer, new CsvConfiguration(CultureInfo.InvariantCulture));
-        csv.Context.RegisterClassMap<FlatMethodExecutionResultMap>();
-        csv.WriteRecords((IEnumerable)flattenedResults);
-        return this;
-    }
-
-    public IGraphExporter WithGraphExporter()
-    {
-        return new GraphExporter(this, _data);
-    }
 
     public static TinyBenchmarkRunner Create()
     {
@@ -73,15 +45,14 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         foreach (var classUnderTestType in classesUnderTest)
         {
             var classUnderTestProperty = AttributeUtility.FindClassUnderTestParameterProperty(classUnderTestType);
-            var parameterAttribute = AttributeUtility.GetParameterAttributeFromProperty(classUnderTestProperty);
+            var parameters = AttributeUtility.GetParametersFromAttribute(classUnderTestProperty);
             var methodsUnderTest = AttributeUtility.GetMethodsWithTinyBenchmarkAttribute(classUnderTestType);
             var classForTest = Activator.CreateInstance(classUnderTestType);
 
             foreach (var methodUnderTest in methodsUnderTest)
             {
                 executionInfos.AddRange(
-                    GetMethodExecutionInfos(
-                        parameterAttribute, methodUnderTest, classForTest, classUnderTestType));
+                    GetMethodExecutionInfos(parameters, methodUnderTest, classForTest, classUnderTestType));
             }
         }
 
@@ -125,13 +96,13 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
     }
 
     private static List<MethodExecutionInfo> GetMethodExecutionInfos(
-        TinyBenchmarkParameterAttribute? parameterAttribute,
+        object[]? parameters,
         MethodInfo methodUnderTest, object? classForTest, Type classUnderTestType)
     {
         var methodExecutionInfos = new List<MethodExecutionInfo>();
-        if (parameterAttribute != null)
+        if (parameters != null)
         {
-            foreach (var parameterAttributeValue in parameterAttribute.Values)
+            foreach (var parameterAttributeValue in parameters)
             {
                 methodExecutionInfos.Add(CreateMethodExecutionInfo(methodUnderTest, classForTest, methodExecutionInfos,
                     classUnderTestType, parameterAttributeValue));
