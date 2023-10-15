@@ -2,5 +2,5 @@
 
 public interface ICsvExporter : IResultProcessor
 {
-    ICsvExporter SaveRawResultsDataAsCsv();
+    ICsvExporter SaveRawResults();
 }

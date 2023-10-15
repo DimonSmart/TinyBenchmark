@@ -12,7 +12,7 @@ public class CsvExporter : ResultProcessor, ICsvExporter
     {
     }
 
-    public ICsvExporter SaveRawResultsDataAsCsv()
+    public ICsvExporter SaveRawResults()
     {
         var flattenedResults =
             Data.Results.SelectMany(result => result.Times,

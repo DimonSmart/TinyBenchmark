@@ -4,7 +4,35 @@
 		<TargetFramework>net7.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+
+                <PackageId>DimonSmart.TinyBenchmark</PackageId>
+                <Version>1.0.0</Version>
+                <Authors>Dmitry Dorogoy</Authors>
+                <Company>DimonSmart</Company>
+                <PackageReadmeFile>readme.md</PackageReadmeFile>
+
+                <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+                <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+                <RootNamespace>DimonSmart.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
+                <PackageTags>Benchmark;Graph</PackageTags>
+
+                <Description>Simpliest ever Benchmarking library.</Description>
+                <RepositoryUrl>https://github.com/DimonSmart/TinyBenchmark</RepositoryUrl>
+                <RepositoryType>git</RepositoryType>
+                <PackageLicenseExpression>0BSD</PackageLicenseExpression>
+
+                <Title>TinyBenchmark</Title>
+                <Copyright>FREE</Copyright>
+                <PackageProjectUrl>https://github.com/DimonSmart/TinyBenchmark</PackageProjectUrl>
+                <PackageIcon>TinyBenchmark.png</PackageIcon>
 	</PropertyGroup>
+
+        <ItemGroup>
+                <None Include="docs\readme.md" Pack="true" PackagePath="\" />
+ 	        <None Include="docs\Images\TinyBenchmark.png" Pack="True" PackagePath="\" />
+	        <None Include="docs\Images\Compare-ExampleClassTest.png" Pack="True" PackagePath="\" />
+        </ItemGroup>
+
 
 	<ItemGroup>
 		<PackageReference Include="CsvHelper" Version="30.0.1" />
