@@ -1,4 +1,5 @@
 ﻿using DimonSmart.TinyBenchmark;
+
 namespace DimonSmart.TinyBenchmarkTests;
 
 public class ExampleClassTest
