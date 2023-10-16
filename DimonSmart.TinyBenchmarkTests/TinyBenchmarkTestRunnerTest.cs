@@ -12,11 +12,11 @@ public class TinyBenchmarkTestRunnerTest
             .Create()
             .Run()
             .WithCsvExporter()
-                .SaveRawResults()
+            .SaveRawResults()
             .WithGraphExporter()
-                .ExportAllRawGraph()
-                .OrderTimes()
-                .ExportAllRawGraph()
-                .ExportAllFunctionsCompareGraph(nameof(ExampleClassTest));
+            .ExportAllRawGraph()
+            .OrderTimes()
+            .ExportAllRawGraph()
+            .ExportAllFunctionsCompareGraph(nameof(ExampleClassTest));
     }
 }
