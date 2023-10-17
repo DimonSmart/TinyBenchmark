@@ -23,7 +23,7 @@ With the ability to parameterize functions using a single argument, TinyBenchmar
 TinyBenchmark is the ideal tool for gaining valuable insights into your code's performance.
 Whether you're a developer looking to optimize your code or simply curious about execution times, TinyBenchmark has you covered.
                                             
-# Ussage example
+# Usage Example
 ## Test class
 ```csharp
 using DimonSmart.TinyBenchmark;
@@ -77,21 +77,22 @@ public class TinyBenchmarkTestRunnerTest
 
 ## Result examples
 
-### Functions comparision
-Main grah for you functions performance comparision
-X - axis represent [TinyBenchmarkParameter(1, 5, 10, 15, 20, 25)]
-Y - function execution time
-All functions labeled with their names
+### Function Comparison Graph:
+This graph shows the performance comparison of your functions. The X-axis represents
+```csharp
+[TinyBenchmarkParameter(1, 5, 10, 15, 20, 25)],
+```
+and the Y-axis represents function execution time. All functions are labeled with their names.
 ![Function comparision](https://raw.githubusercontent.com/DimonSmart/TinyBenchmark/master/DimonSmart.TinyBenchmark/Docs/Images/Compare-ExampleClassTest.png)
 
-### Raw execution times
-This graph can be useful if you want to be sure that you function provide stable values over time
-Slightly fluctuated results is ok. But if you see something completely different - it could indicate some parallel running processes
-influence you measurement process.
-![Function comparision](https://raw.githubusercontent.com/DimonSmart/TinyBenchmark/master/DimonSmart.TinyBenchmark/Docs/Images/Raw-ExampleClassTest-Function1-1-Ascending.png)
-
-### Raw results ordered
-This graph also represent raw timeing values but soreted. Typical grach shape shuld be like a almost horisontal line with a sharp rise at the end.
-This sharp end correspond longer execution times. The shorter this rising part the better. 
-
+### Raw Execution Times
+This graph is useful for ensuring that your functions provide stable values over time.
+Slightly fluctuated results are okay, but if you see something completely different,
+it could indicate the influence of parallel running processes on your measurement process.
 ![Function comparision](https://raw.githubusercontent.com/DimonSmart/TinyBenchmark/master/DimonSmart.TinyBenchmark/Docs/Images/Raw-ExampleClassTest-Function1-1-Unordered.png)
+
+### Raw Results (Ordered)
+This graph also represents raw timing values but sorted.
+A typical graph shape should resemble an almost horizontal line with a sharp rise at the end.
+This sharp end corresponds to longer execution times, and the shorter this rising part, the better.
+![Function comparision](https://raw.githubusercontent.com/DimonSmart/TinyBenchmark/master/DimonSmart.TinyBenchmark/Docs/Images/Raw-ExampleClassTest-Function1-1-Ascending.png)
