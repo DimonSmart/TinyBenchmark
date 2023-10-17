@@ -72,13 +72,26 @@ public class TinyBenchmarkTestRunnerTest
     }
 }
 
+
 ```
 
 ## Result examples
 
 ### Functions comparision
+Main grah for you functions performance comparision
+X - axis represent [TinyBenchmarkParameter(1, 5, 10, 15, 20, 25)]
+Y - function execution time
+All functions labeled with their names
+![Function comparision](https://raw.githubusercontent.com/DimonSmart/TinyBenchmark/master/DimonSmart.TinyBenchmark/Docs/Images/Compare-ExampleClassTest.png)
 
-![Function comparision](https://github.com/DimonSmart/TinyBenchmark/blob/main/DimonSmart.TinyBenchmark/Docs/Images/Compare-ExampleClassTest.png?raw=true)
+### Raw execution times
+This graph can be useful if you want to be sure that you function provide stable values over time
+Slightly fluctuated results is ok. But if you see something completely different - it could indicate some parallel running processes
+influence you measurement process.
+![Function comparision](https://raw.githubusercontent.com/DimonSmart/TinyBenchmark/master/DimonSmart.TinyBenchmark/Docs/Images/Raw-ExampleClassTest-Function1-1-Ascending.png)
 
+### Raw results ordered
+This graph also represent raw timeing values but soreted. Typical grach shape shuld be like a almost horisontal line with a sharp rise at the end.
+This sharp end correspond longer execution times. The shorter this rising part the better. 
 
-
+![Function comparision](https://raw.githubusercontent.com/DimonSmart/TinyBenchmark/master/DimonSmart.TinyBenchmark/Docs/Images/Raw-ExampleClassTest-Function1-1-Unordered.png)
