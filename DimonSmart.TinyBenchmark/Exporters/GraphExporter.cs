@@ -85,10 +85,10 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
 
         var classRunParameters = byFunction.First()
             .Select(f => f.Method.Parameter)
-            //.Distinct()
             .ToList();
         var plot = new Plot(Width, Height);
         plot.XLabel("Run number");
+        plot.YLabel("Time, μs");
 
         double[] dataX;
         string[] labelX;
@@ -108,7 +108,7 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         foreach (var function in byFunction)
         {
             var dataY = function
-                .Select(f => TimeSpanUtils.Get50Percentile(f.Times).TotalMicroseconds).ToArray();
+                .Select(f => Data.GetResult(f.Times).TotalMicroseconds).ToArray();
             plot.AddScatter(dataX, dataY, label: $"{function.Key}");
         }
 

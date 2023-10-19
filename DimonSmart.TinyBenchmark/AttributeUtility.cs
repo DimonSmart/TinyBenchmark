@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using DimonSmart.TinyBenchmark.Attributes;
 
 namespace DimonSmart.TinyBenchmark;
 
@@ -53,7 +54,7 @@ public static class AttributeUtility
 
         foreach (var property in properties)
         {
-            if (Attribute.IsDefined(property, typeof(TinyBenchmarkParameterAttribute)))
+            if (Attribute.IsDefined(property, typeof(ParameterAttribute)))
             {
                 if (parameterProperty != null)
                 {
@@ -69,6 +70,6 @@ public static class AttributeUtility
 
     public static object[]? GetParametersFromAttribute(PropertyInfo? property)
     {
-        return property?.GetCustomAttribute<TinyBenchmarkParameterAttribute>()?.Values;
+        return property?.GetCustomAttribute<ParameterAttribute>()?.Values;
     }
 }
