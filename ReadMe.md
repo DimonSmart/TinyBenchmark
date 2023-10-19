@@ -68,7 +68,7 @@ public class TinyBenchmarkTestRunnerTest
                 .ExportAllRawGraph()
                 .OrderTimes()
                 .ExportAllRawGraph()
-                .ExportAllFunctionsCompareGraph(nameof(ExampleClassTest));
+                .ExportAllFunctionsCompareGraph();
     }
 }
 

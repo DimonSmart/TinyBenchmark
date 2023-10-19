@@ -7,6 +7,7 @@ public class ResultProcessor : IResultProcessor
     protected readonly BenchmarkData Data;
     protected readonly ITinyBenchmarkRunner TinyBenchmarkRunner;
 
+
     public ResultProcessor(ITinyBenchmarkRunner tinyBenchmarkRunner, BenchmarkData data)
     {
         TinyBenchmarkRunner = tinyBenchmarkRunner;

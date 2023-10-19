@@ -1,10 +1,10 @@
-﻿using DimonSmart.TinyBenchmark;
+﻿using DimonSmart.TinyBenchmark.Attributes;
 
 namespace DimonSmart.TinyBenchmarkTests;
 
-public class ExampleClassTest
+public class GuidGenerationTest
 {
-    [TinyBenchmarkParameter(1, 5, 10, 15, 20, 25)]
+    [TinyBenchmarkRangeParameter(1, 100, 5)]
     public int BenchmarkParameter { get; set; }
 
     [TinyBenchmark]

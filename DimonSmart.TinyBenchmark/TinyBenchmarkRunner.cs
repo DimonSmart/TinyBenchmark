@@ -1,15 +1,18 @@
 ﻿using System.Diagnostics;
 using System.Reflection;
 using DimonSmart.TinyBenchmark.Exporters;
+using static DimonSmart.TinyBenchmark.AttributeUtility;
 
 namespace DimonSmart.TinyBenchmark;
 
 public class TinyBenchmarkRunner : ITinyBenchmarkRunner
 {
+    private readonly Action<string>? _writeMessage;
     private BenchmarkData _data = new();
 
-    private TinyBenchmarkRunner()
+    private TinyBenchmarkRunner(Action<string>? writeMessage)
     {
+        _writeMessage = writeMessage;
     }
 
     public ITinyBenchmarkRunner Reset()
@@ -22,57 +25,81 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
     {
         var methodExecutionInfos = GetMethodExecutionInfos();
 
-        foreach (var methodExecutionInfo in methodExecutionInfos)
+        var results = methodExecutionInfos
+            .ToDictionary(m => m, v => new List<TimeSpan>());
+        foreach (var result in results)
         {
-            var times = MeasureAndRunAction(methodExecutionInfo.Action, _data.MaxFunctionRunTImeMilliseconds);
-            var result = new MethodExecutionResults(methodExecutionInfo, times);
-            _data.Results.Add(result);
+            PrepareRun();
+            for (var i = 0; i < _data.WarmUpCount; i++)
+            {
+                result.Value.Add(MeasureExecutionTime(result.Key.Action));
+            }
         }
+
+        var total = results.Values
+            .Select(t => t.Average(i => i.TotalNanoseconds))
+            .Sum();
+
+        var totalLimit = _data.MaxRunExecutionTime;
+
+        foreach (var result in results)
+        {
+            var thisRunTime = result.Value.Select(s => s.TotalNanoseconds).Average();
+            int? calculatedNumberOfExecutions = null;
+            if (totalLimit.HasValue)
+            {
+                calculatedNumberOfExecutions =
+                    (int)(totalLimit.Value.TotalNanoseconds / (thisRunTime * results.Count));
+            }
+
+            var executionCount = _data.MinFunctionExecutionCount;
+            if (calculatedNumberOfExecutions > executionCount)
+            {
+                executionCount = calculatedNumberOfExecutions.Value;
+            }
+
+            if (executionCount > _data.MaxFunctionExecutionCount)
+            {
+                executionCount = _data.MaxFunctionExecutionCount.Value;
+            }
+
+            for (var i = 0; i < executionCount; i++)
+            {
+                result.Value.Add(MeasureExecutionTime(result.Key.Action));
+            }
+        }
+
+        _data.Results = results
+            .Select(i => new MethodExecutionResults(i.Key, i.Value))
+            .ToList();
 
         return new ResultProcessor(this, _data);
     }
 
-
-    public static TinyBenchmarkRunner Create()
+    public static TinyBenchmarkRunner Create(Action<string>? writeMessage = null)
     {
-        return new TinyBenchmarkRunner();
+        return new TinyBenchmarkRunner(writeMessage);
     }
 
-    private static List<MethodExecutionInfo> GetMethodExecutionInfos()
+    private static IReadOnlyCollection<MethodExecutionInfo> GetMethodExecutionInfos()
     {
-        var classesUnderTest = AttributeUtility.GetClassesUnderTest();
         var executionInfos = new List<MethodExecutionInfo>();
-        foreach (var classUnderTestType in classesUnderTest)
+        var classes = GetClassesUnderTest();
+        foreach (var classUnderTestType in classes)
         {
-            var classUnderTestProperty = AttributeUtility.FindClassUnderTestParameterProperty(classUnderTestType);
-            var parameters = AttributeUtility.GetParametersFromAttribute(classUnderTestProperty);
-            var methodsUnderTest = AttributeUtility.GetMethodsWithTinyBenchmarkAttribute(classUnderTestType);
-            var classForTest = Activator.CreateInstance(classUnderTestType);
+            var propertyInfo = FindClassUnderTestParameterProperty(classUnderTestType);
+            var parameters = GetParametersFromAttribute(propertyInfo);
+            var methods = GetMethodsWithTinyBenchmarkAttribute(classUnderTestType);
+            var instance = Activator.CreateInstance(classUnderTestType) ??
+                           throw new Exception("Can't create class instance");
 
-            foreach (var methodUnderTest in methodsUnderTest)
+            foreach (var method in methods)
             {
-                executionInfos.AddRange(
-                    GetMethodExecutionInfos(parameters, methodUnderTest, classForTest, classUnderTestType));
+                executionInfos.AddRange(GetMethodExecutionInfos(parameters, method, instance, classUnderTestType));
             }
         }
 
         return executionInfos;
-    }
-
-    public List<TimeSpan> MeasureAndRunAction(Action action, int maxTotalMilliseconds)
-    {
-        var firstRunTime = MeasureExecutionTime(action);
-        var iterations = (int)(maxTotalMilliseconds / firstRunTime.TotalMilliseconds);
-
-        iterations = Math.Max(iterations, _data.MinFunctionExecutionCount);
-        iterations = Math.Min(iterations, _data.MaxFunctionExecutionCount);
-        var executionTimes = new List<TimeSpan>(iterations + 1);
-        executionTimes.Add(firstRunTime);
-
-
-        for (var i = 0; i < iterations; i++) executionTimes.Add(MeasureExecutionTime(action));
-
-        return executionTimes;
     }
 
     private static void PrepareRun()
@@ -84,48 +111,51 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         GC.Collect();
     }
 
-    public static TimeSpan MeasureExecutionTime(Action action)
+    internal static TimeSpan MeasureExecutionTime(Action action)
     {
-        PrepareRun();
-        GC.TryStartNoGCRegion(100 * 1024 * 1024);
+        // PrepareRun();
+        // GC.TryStartNoGCRegion(100 * 1024 * 1024);
         var stopwatch = Stopwatch.StartNew();
         action();
         stopwatch.Stop();
-        GC.EndNoGCRegion();
+        // GC.EndNoGCRegion();
         return stopwatch.Elapsed;
     }
 
-    private static List<MethodExecutionInfo> GetMethodExecutionInfos(
-        object[]? parameters,
-        MethodInfo methodUnderTest, object? classForTest, Type classUnderTestType)
+    internal static IEnumerable<MethodExecutionInfo> GetMethodExecutionInfos(
+        object[]? parameters, MethodInfo methodInfo, object instance, Type classType)
     {
         var methodExecutionInfos = new List<MethodExecutionInfo>();
         if (parameters != null)
         {
             foreach (var parameterAttributeValue in parameters)
             {
-                methodExecutionInfos.Add(CreateMethodExecutionInfo(methodUnderTest, classForTest, methodExecutionInfos,
-                    classUnderTestType, parameterAttributeValue));
+                var methodExecutionInfo =
+                    new MethodExecutionInfo(classType, methodInfo, parameterAttributeValue, Action);
+                methodExecutionInfos.Add(methodExecutionInfo);
+                continue;
+
+                void Action()
+                {
+                    methodInfo.Invoke(instance, new[] { parameterAttributeValue });
+                }
             }
         }
         else
         {
-            methodExecutionInfos.Add(CreateMethodExecutionInfo(methodUnderTest, classForTest, methodExecutionInfos,
-                classUnderTestType));
+            var methodExecutionInfo = new MethodExecutionInfo(classType, methodInfo, null, Action);
+            methodExecutionInfos.Add(methodExecutionInfo);
+
+            void Action()
+            {
+                methodInfo.Invoke(instance, null);
+            }
         }
 
         return methodExecutionInfos;
     }
 
-    private static MethodExecutionInfo CreateMethodExecutionInfo(MethodInfo methodUnderTest, object? classForTest,
-        List<MethodExecutionInfo> methodExecutionInfos, Type classUnderTestType, object? parameterAttributeValue = null)
-    {
-        var parameters = parameterAttributeValue == null ? null : new[] { parameterAttributeValue };
-        var action = () => { methodUnderTest.Invoke(classForTest, parameters); };
-        return new MethodExecutionInfo(classUnderTestType, methodUnderTest, parameterAttributeValue, action);
-    }
-
-    public ITinyBenchmarkRunner WithRunCountLimits(int minFunctionExecutionCount, int maxFunctionExecutionCount)
+    public ITinyBenchmarkRunner WithRunCountLimits(int minFunctionExecutionCount, int? maxFunctionExecutionCount = null)
     {
         if (minFunctionExecutionCount < 1)
         {
@@ -141,6 +171,30 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
 
         _data.MinFunctionExecutionCount = minFunctionExecutionCount;
         _data.MaxFunctionExecutionCount = maxFunctionExecutionCount;
+        return this;
+    }
+
+    public TinyBenchmarkRunner WithMaxRunExecutionTime(TimeSpan time)
+    {
+        _data.MaxRunExecutionTime = time;
+        return this;
+    }
+
+    public TinyBenchmarkRunner WithoutRunExecutionTimeLimit()
+    {
+        _data.MaxRunExecutionTime = null;
+        return this;
+    }
+
+    public ITinyBenchmarkRunner WithPercentile50AsResult()
+    {
+        _data.GetResult = TimeSpanUtils.Percentile50;
+        return this;
+    }
+
+    public ITinyBenchmarkRunner WithBestTimeAsResult()
+    {
+        _data.GetResult = TimeSpanUtils.BestResult;
         return this;
     }
 }

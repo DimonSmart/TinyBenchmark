@@ -1,4 +1,4 @@
-﻿namespace DimonSmart.TinyBenchmark;
+﻿namespace DimonSmart.TinyBenchmark.Attributes;
 
 [AttributeUsage(AttributeTargets.Property)]
 public class TinyBenchmarkParameterAttribute : Attribute
@@ -8,5 +8,5 @@ public class TinyBenchmarkParameterAttribute : Attribute
         Values = values;
     }
 
-    public object[] Values { get; }
+    public object[] Values { get; set; }
 }

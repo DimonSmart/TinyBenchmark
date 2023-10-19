@@ -5,16 +5,18 @@ using CsvHelper.Configuration;
 
 namespace DimonSmart.TinyBenchmark.Exporters;
 
-public class CsvExporter : ResultProcessor, ICsvExporter
+public class CsvExporter : ExporterBaseClass, ICsvExporter
 {
     public CsvExporter(ITinyBenchmarkRunner tinyBenchmarkRunner, BenchmarkData data) :
         base(tinyBenchmarkRunner, data)
     {
     }
 
+    public string CsvFileNameTemplate { get; set; } = "RAW-{ClassName}.csv";
+
     public ICsvExporter SaveRawResults()
     {
-        var flattenedResults =
+        var groupedResults =
             Data.Results.SelectMany(result => result.Times,
                     (result, time) =>
                         new FlatMethodExecutionResult(
@@ -22,13 +24,34 @@ public class CsvExporter : ResultProcessor, ICsvExporter
                             result.Method.MethodInfo.Name,
                             result.Method.Parameter,
                             time))
-                .OrderBy(c => c.ClassName)
-                .ThenBy(f => f.MethodName)
-                .ThenBy(t => t.Time);
-        using var writer = new StreamWriter("MethodExecutionResults.csv");
+                .GroupBy(g => g.ClassName);
+
+        foreach (var groupedResult in groupedResults)
+        {
+            WriteClassResults(groupedResult.Key, groupedResult);
+        }
+
+        return this;
+    }
+
+    private void WriteClassResults(string className, IEnumerable<FlatMethodExecutionResult> groupedResult)
+    {
+        var data = groupedResult
+            .OrderBy(f => f.MethodName)
+            .ThenBy(t => t.Time);
+        var fileName = SubstituteFilenameTemplate(CsvFileNameTemplate, className);
+        using var stream = new FileStream(fileName, FileMode.Create);
+        using var bufferedStream = new BufferedStream(stream, 1024 * 1024);
+        using var writer = new StreamWriter(bufferedStream);
         using var csv = new CsvWriter(writer, new CsvConfiguration(CultureInfo.InvariantCulture));
         csv.Context.RegisterClassMap<FlatMethodExecutionResultMap>();
-        csv.WriteRecords((IEnumerable)flattenedResults);
-        return this;
+        csv.WriteRecords((IEnumerable)data);
+    }
+
+    private string SubstituteFilenameTemplate(string template, string className)
+    {
+        var fileName = template
+            .Replace("{className}", className, StringComparison.OrdinalIgnoreCase);
+        return Path.Combine(ResultsFolder, fileName);
     }
 }

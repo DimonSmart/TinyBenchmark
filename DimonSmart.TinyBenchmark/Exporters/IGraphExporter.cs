@@ -12,5 +12,6 @@ public interface IGraphExporter : IResultProcessor
     IGraphExporter OrderTimes(SortDirection direction = Ascending);
     IGraphExporter ExportAllRawGraph();
     IGraphExporter ExportRawGraph(string className, string methodName, object? parameter);
-    IGraphExporter ExportAllFunctionsCompareGraph(string className);
+    IGraphExporter ExportAllFunctionsCompareGraph(Type classType);
+    IGraphExporter ExportAllFunctionsCompareGraph();
 }

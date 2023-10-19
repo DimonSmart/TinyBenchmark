@@ -1,12 +1,13 @@
-﻿namespace DimonSmart.TinyBenchmark;
+﻿using DimonSmart.TinyBenchmark.Exporters;
+
+namespace DimonSmart.TinyBenchmark;
 
 public class BenchmarkData
 {
-    public int MaxFunctionRunTImeMilliseconds { get; internal set; } = 5000;
-
+    public int WarmUpCount { get; internal set; } = 100;
+    public TimeSpan? MaxRunExecutionTime { get; internal set; }
     public int MinFunctionExecutionCount { get; internal set; } = 100;
-
-    public int MaxFunctionExecutionCount { get; internal set; } = 1000;
-
-    public IList<MethodExecutionResults> Results { get; } = new List<MethodExecutionResults>();
+    public int? MaxFunctionExecutionCount { get; internal set; } = 10000;
+    public Func<IEnumerable<TimeSpan>, TimeSpan> GetResult { get; internal set; } = TimeSpanUtils.Percentile50;
+    public IList<MethodExecutionResults> Results { get; internal set; } = new List<MethodExecutionResults>();
 }
