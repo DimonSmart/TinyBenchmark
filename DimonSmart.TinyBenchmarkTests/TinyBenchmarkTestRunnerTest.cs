@@ -19,7 +19,7 @@ public class TinyBenchmarkTestRunnerTest
         TinyBenchmarkRunner
             .Create()
             .WithMaxRunExecutionTime(TimeSpan.FromSeconds(60))
-            .WithBestTimeAsResult()
+            // .WithBestTimeAsResult()
             .Run()
             // .WithCsvExporter()
             // .SaveRawResults()
