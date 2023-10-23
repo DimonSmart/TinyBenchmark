@@ -18,11 +18,11 @@ public class TinyBenchmarkTestRunnerTest
     {
         TinyBenchmarkRunner
             .Create()
-            .WithMaxRunExecutionTime(TimeSpan.FromSeconds(60))
-            .WithBestTimeAsResult()
+            .WithMaxRunExecutionTime(TimeSpan.FromSeconds(2))
+            // .WithBestTimeAsResult()
             .Run()
-            // .WithCsvExporter()
-            // .SaveRawResults()
+            .WithCsvExporter()
+            .SaveRawResults()
             .WithGraphExporter()
             // .ExportAllRawGraph()
             // .OrderTimes()
