@@ -1,18 +1,16 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Reflection;
 using DimonSmart.TinyBenchmark.Exporters;
-using static System.Collections.Specialized.BitVector32;
 using static DimonSmart.TinyBenchmark.AttributeUtility;
 
 namespace DimonSmart.TinyBenchmark;
 
 public class TinyBenchmarkRunner : ITinyBenchmarkRunner
 {
-    private readonly Action<string> _writeMessage;
+    private readonly Action<string>? _writeMessage;
     private BenchmarkData _data = new();
 
-    private TinyBenchmarkRunner(Action<string> writeMessage)
+    private TinyBenchmarkRunner(Action<string>? writeMessage)
     {
         _writeMessage = writeMessage;
     }
@@ -31,6 +29,7 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
             .ToDictionary(m => m, v => new List<TimeSpan>());
         foreach (var result in results)
         {
+            PrepareRun();
             for (var i = 0; i < _data.WarmUpCount; i++)
             {
                 result.Value.Add(MeasureExecutionTime(result.Key.Action));
@@ -38,25 +37,36 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         }
 
         var total = results.Values
-                .Select(t => t.Average(i => i.TotalMicroseconds))
-                .Sum();
+            .Select(t => t.Average(i => i.TotalNanoseconds))
+            .Sum();
 
         var totalLimit = _data.MaxRunExecutionTime;
 
         foreach (var result in results)
         {
-            var thisRunTime = result.Value.Select(s => s.TotalMicroseconds).Average();
+            var thisRunTime = result.Value.Select(s => s.TotalNanoseconds).Average();
             int? calculatedNumberOfExecutions = null;
             if (totalLimit.HasValue)
-                calculatedNumberOfExecutions = (int)(totalLimit.Value.TotalMicroseconds / (thisRunTime * results.Count));
+            {
+                calculatedNumberOfExecutions =
+                    (int)(totalLimit.Value.TotalNanoseconds / (thisRunTime * results.Count));
+            }
+
             var executionCount = _data.MinFunctionExecutionCount;
             if (calculatedNumberOfExecutions > executionCount)
+            {
                 executionCount = calculatedNumberOfExecutions.Value;
+            }
+
             if (executionCount > _data.MaxFunctionExecutionCount)
+            {
                 executionCount = _data.MaxFunctionExecutionCount.Value;
+            }
 
             for (var i = 0; i < executionCount; i++)
+            {
                 result.Value.Add(MeasureExecutionTime(result.Key.Action));
+            }
         }
 
         _data.Results = results
@@ -66,7 +76,7 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         return new ResultProcessor(this, _data);
     }
 
-    public static TinyBenchmarkRunner Create(Action<string> writeMessage = null)
+    public static TinyBenchmarkRunner Create(Action<string>? writeMessage = null)
     {
         return new TinyBenchmarkRunner(writeMessage);
     }

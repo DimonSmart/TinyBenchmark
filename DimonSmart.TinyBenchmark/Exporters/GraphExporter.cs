@@ -120,12 +120,14 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         foreach (var function in byFunction)
         {
             var dataY = function
-                .Select(f => Data.GetResult(f.Times).TotalMicroseconds).ToArray();
+                .Select(f => Data.GetResult(f.Times).TotalNanoseconds).ToArray();
             plot.AddScatter(dataX, dataY, label: $"{function.Key}");
         }
 
         plot.Legend();
-        var fileName = SubstituteComparisionFilenameTemplate(ComparisionFileNameTemplate, classType.Name, Data.GetResult.Method.Name);
+        var fileName =
+            SubstituteComparisionFilenameTemplate(ComparisionFileNameTemplate, classType.Name,
+                Data.GetResult.Method.Name);
         plot.SaveFig(fileName);
         return this;
     }
@@ -143,7 +145,7 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         var methodName = rmExecutionResults.Method.MethodInfo.Name;
         var parameter = rmExecutionResults.Method.Parameter;
         var dataX = rmExecutionResults.Times.Select((_, index) => (double)(index + 1)).ToArray();
-        var dataY = rmExecutionResults.Times.Select(t => t.TotalMicroseconds).ToArray();
+        var dataY = rmExecutionResults.Times.Select(t => t.TotalNanoseconds).ToArray();
         dataY = SortTimesDirection switch
         {
             Ascending => dataY.OrderBy(t => t).ToArray(),

@@ -5,7 +5,7 @@ namespace DimonSmart.TinyBenchmarkTests;
 
 public class StringConcatenationTest
 {
-    private static string[] allNames =
+    private static readonly string[] allNames =
     {
         "Philip J. Fry", "Turanga Leela", "Bender Bending Rodriguez", "Professor Hubert J. Farnsworth", "Amy Wong",
         "Hermes Conrad", "Zoidberg", "Nibbler", "Zapp Brannigan", "Kif Kroker",
@@ -20,7 +20,8 @@ public class StringConcatenationTest
         "Mr. Elephant", "Madame Gazelle", "Miss Rabbit", "Mr. Potato", "Doctor Brown Bear"
     };
 
-    [TinyBenchmarkRangeParameter(0, 60, 5)] public int BenchmarkParameter { get; set; }
+    [TinyBenchmarkRangeParameter(0, 60, 5)]
+    public int BenchmarkParameter { get; set; }
 
     [TinyBenchmark]
     public void StringPlus(int parameter)

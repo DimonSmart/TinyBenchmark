@@ -9,6 +9,6 @@ public sealed class FlatMethodExecutionResultMap : ClassMap<FlatMethodExecutionR
         Map(x => x.ClassName);
         Map(x => x.MethodName);
         Map(x => x.Parameter);
-        Map(x => x.Time);
+        Map(x => x.Time).TypeConverter<TimeSpanToMillisecondsConverter>();
     }
 }
