@@ -4,7 +4,8 @@ namespace DimonSmart.TinyBenchmarkTests;
 
 public class GuidGenerationTest
 {
-    [ParameterAttribute(1, 2, 3, 4, 5)] public int BenchmarkParameter { get; set; }
+    [TinyBenchmarkRangeParameter(1, 100, 5)] 
+    public int BenchmarkParameter { get; set; }
 
     [TinyBenchmark]
     public void Function1(int parameter)

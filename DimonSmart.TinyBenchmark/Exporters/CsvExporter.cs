@@ -25,7 +25,14 @@ public class CsvExporter : ResultProcessor, ICsvExporter
                 .OrderBy(c => c.ClassName)
                 .ThenBy(f => f.MethodName)
                 .ThenBy(t => t.Time);
-        using var writer = new StreamWriter("MethodExecutionResults.csv");
+        // using var writer = new StreamWriter("MethodExecutionResults.csv");
+        // using var csv = new CsvWriter(writer, new CsvConfiguration(CultureInfo.InvariantCulture));
+        // csv.Context.RegisterClassMap<FlatMethodExecutionResultMap>();
+        // csv.WriteRecords((IEnumerable)flattenedResults);
+
+        using var stream = new FileStream("MethodExecutionResults.csv", FileMode.Create);
+        using var bufferedStream = new BufferedStream(stream, bufferSize: 1024 * 1024);
+        using var writer = new StreamWriter(bufferedStream);
         using var csv = new CsvWriter(writer, new CsvConfiguration(CultureInfo.InvariantCulture));
         csv.Context.RegisterClassMap<FlatMethodExecutionResultMap>();
         csv.WriteRecords((IEnumerable)flattenedResults);

@@ -74,11 +74,23 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         return this;
     }
 
-    public IGraphExporter ExportAllFunctionsCompareGraph(string className)
+    public IGraphExporter ExportAllFunctionsCompareGraph()
+    {
+        var classes = Data
+            .Results.Select(r => r.Method.ClassType).Distinct();
+
+        foreach (var cls in classes)
+        {
+            ExportAllFunctionsCompareGraph(cls);
+        }
+        return this;
+    }
+
+    public IGraphExporter ExportAllFunctionsCompareGraph(Type classType)
     {
         var classFunctions = Data
             .Results
-            .Where(c => c.Method.ClassType.Name == className)
+            .Where(c => c.Method.ClassType == classType)
             .ToList();
         var byFunction = classFunctions
             .GroupBy(g => g.Method.MethodInfo.Name, v => v).ToList();
@@ -113,12 +125,12 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         }
 
         plot.Legend();
-        var fileName = SubstituteComparisionFilenameTemplate(ComparisionFileNameTemplate, className);
+        var fileName = SubstituteComparisionFilenameTemplate(ComparisionFileNameTemplate, classType.Name, Data.GetResult.Method.Name);
         plot.SaveFig(fileName);
         return this;
     }
 
-    private GraphExporter GraphSize(int width, int height)
+    public IGraphExporter GraphSize(int width, int height)
     {
         Width = width;
         Height = height;
@@ -154,16 +166,19 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
     private string SubstituteFilenameTemplate(string template, string className, string methodName, object? parameter,
         SortDirection sorted)
     {
-        var fileName = template.Replace("{methodName}", methodName, StringComparison.OrdinalIgnoreCase)
+        var fileName = template
+            .Replace("{methodName}", methodName, StringComparison.OrdinalIgnoreCase)
             .Replace("{className}", className, StringComparison.OrdinalIgnoreCase)
             .Replace("{parameter}", parameter?.ToString() ?? string.Empty, StringComparison.OrdinalIgnoreCase)
             .Replace("{sorted}", sorted.ToString(), StringComparison.OrdinalIgnoreCase);
         return Path.Combine(ResultsFolder, fileName);
     }
 
-    private string SubstituteComparisionFilenameTemplate(string template, string className)
+    private string SubstituteComparisionFilenameTemplate(string template, string className, string selector)
     {
-        var fileName = template.Replace("{className}", className, StringComparison.OrdinalIgnoreCase);
+        var fileName = template
+            .Replace("{className}", className, StringComparison.OrdinalIgnoreCase)
+            .Replace("{selector}", selector, StringComparison.OrdinalIgnoreCase);
         return Path.Combine(ResultsFolder, fileName);
     }
 }

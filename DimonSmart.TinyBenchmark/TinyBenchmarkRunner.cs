@@ -1,16 +1,20 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Reflection;
 using DimonSmart.TinyBenchmark.Exporters;
+using static System.Collections.Specialized.BitVector32;
 using static DimonSmart.TinyBenchmark.AttributeUtility;
 
 namespace DimonSmart.TinyBenchmark;
 
 public class TinyBenchmarkRunner : ITinyBenchmarkRunner
 {
+    private readonly Action<string> _writeMessage;
     private BenchmarkData _data = new();
 
-    private TinyBenchmarkRunner()
+    private TinyBenchmarkRunner(Action<string> writeMessage)
     {
+        _writeMessage = writeMessage;
     }
 
     public ITinyBenchmarkRunner Reset()
@@ -23,20 +27,48 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
     {
         var methodExecutionInfos = GetMethodExecutionInfos();
 
-        foreach (var methodExecutionInfo in methodExecutionInfos)
+        var results = methodExecutionInfos
+            .ToDictionary(m => m, v => new List<TimeSpan>());
+        foreach (var result in results)
         {
-            var times = MeasureAndRunAction(methodExecutionInfo.Action, _data.MaxFunctionRunTImeMilliseconds);
-            var result = new MethodExecutionResults(methodExecutionInfo, times);
-            _data.Results.Add(result);
+            for (var i = 0; i < _data.WarmUpCount; i++)
+            {
+                result.Value.Add(MeasureExecutionTime(result.Key.Action));
+            }
         }
+
+        var total = results.Values
+                .Select(t => t.Average(i => i.TotalMicroseconds))
+                .Sum();
+
+        var totalLimit = _data.MaxRunExecutionTime;
+
+        foreach (var result in results)
+        {
+            var thisRunTime = result.Value.Select(s => s.TotalMicroseconds).Average();
+            int? calculatedNumberOfExecutions = null;
+            if (totalLimit.HasValue)
+                calculatedNumberOfExecutions = (int)(totalLimit.Value.TotalMicroseconds / (thisRunTime * results.Count));
+            var executionCount = _data.MinFunctionExecutionCount;
+            if (calculatedNumberOfExecutions > executionCount)
+                executionCount = calculatedNumberOfExecutions.Value;
+            if (executionCount > _data.MaxFunctionExecutionCount)
+                executionCount = _data.MaxFunctionExecutionCount.Value;
+
+            for (var i = 0; i < executionCount; i++)
+                result.Value.Add(MeasureExecutionTime(result.Key.Action));
+        }
+
+        _data.Results = results
+            .Select(i => new MethodExecutionResults(i.Key, i.Value))
+            .ToList();
 
         return new ResultProcessor(this, _data);
     }
 
-
-    public static TinyBenchmarkRunner Create()
+    public static TinyBenchmarkRunner Create(Action<string> writeMessage = null)
     {
-        return new TinyBenchmarkRunner();
+        return new TinyBenchmarkRunner(writeMessage);
     }
 
     private static IReadOnlyCollection<MethodExecutionInfo> GetMethodExecutionInfos()
@@ -60,21 +92,6 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         return executionInfos;
     }
 
-    public List<TimeSpan> MeasureAndRunAction(Action action, int maxTotalMilliseconds)
-    {
-        var firstRunTime = MeasureExecutionTime(action);
-        var iterations = (int)(maxTotalMilliseconds / firstRunTime.TotalMilliseconds);
-
-        iterations = Math.Max(iterations, _data.MinFunctionExecutionCount);
-        iterations = Math.Min(iterations, _data.MaxFunctionExecutionCount);
-        var executionTimes = new List<TimeSpan>(iterations + 1);
-        executionTimes.Add(firstRunTime);
-
-        for (var i = 0; i < iterations; i++) executionTimes.Add(MeasureExecutionTime(action));
-
-        return executionTimes;
-    }
-
     private static void PrepareRun()
     {
         GC.Collect();
@@ -84,18 +101,18 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         GC.Collect();
     }
 
-    public static TimeSpan MeasureExecutionTime(Action action)
+    internal static TimeSpan MeasureExecutionTime(Action action)
     {
-        PrepareRun();
-        GC.TryStartNoGCRegion(100 * 1024 * 1024);
+        // PrepareRun();
+        // GC.TryStartNoGCRegion(100 * 1024 * 1024);
         var stopwatch = Stopwatch.StartNew();
         action();
         stopwatch.Stop();
-        GC.EndNoGCRegion();
+        // GC.EndNoGCRegion();
         return stopwatch.Elapsed;
     }
 
-    private static IEnumerable<MethodExecutionInfo> GetMethodExecutionInfos(
+    internal static IEnumerable<MethodExecutionInfo> GetMethodExecutionInfos(
         object[]? parameters, MethodInfo methodInfo, object instance, Type classType)
     {
         var methodExecutionInfos = new List<MethodExecutionInfo>();
@@ -128,7 +145,7 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         return methodExecutionInfos;
     }
 
-    public ITinyBenchmarkRunner WithRunCountLimits(int minFunctionExecutionCount, int maxFunctionExecutionCount)
+    public ITinyBenchmarkRunner WithRunCountLimits(int minFunctionExecutionCount, int? maxFunctionExecutionCount = null)
     {
         if (minFunctionExecutionCount < 1)
         {
@@ -147,15 +164,27 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         return this;
     }
 
-    public ITinyBenchmarkRunner With50PercentileAsResult()
+    public TinyBenchmarkRunner WithMaxRunExecutionTime(TimeSpan time)
     {
-        _data.GetResult = TimeSpanUtils.Get50Percentile;
+        _data.MaxRunExecutionTime = time;
         return this;
     }
 
-    public ITinyBenchmarkRunner WithMinimumTimeAsResult()
+    public TinyBenchmarkRunner WithoutRunExecutionTimeLimit()
     {
-        _data.GetResult = TimeSpanUtils.GetMinResult;
+        _data.MaxRunExecutionTime = null;
+        return this;
+    }
+
+    public ITinyBenchmarkRunner WithPercentile50AsResult()
+    {
+        _data.GetResult = TimeSpanUtils.Percentile50;
+        return this;
+    }
+
+    public ITinyBenchmarkRunner WithBestTimeAsResult()
+    {
+        _data.GetResult = TimeSpanUtils.BestResult;
         return this;
     }
 }

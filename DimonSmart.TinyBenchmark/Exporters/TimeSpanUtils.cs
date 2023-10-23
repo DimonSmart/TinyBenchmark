@@ -2,7 +2,7 @@
 
 public static class TimeSpanUtils
 {
-    public static TimeSpan Get50Percentile(IEnumerable<TimeSpan> times)
+    public static TimeSpan Percentile50(IEnumerable<TimeSpan> times)
     {
         var sortedList = times.OrderBy(ts => ts).ToList();
 
@@ -21,7 +21,7 @@ public static class TimeSpanUtils
         return sortedList[sortedList.Count / 2];
     }
 
-    public static TimeSpan GetMinResult(IEnumerable<TimeSpan> times)
+    public static TimeSpan BestResult(IEnumerable<TimeSpan> times)
     {
         return times.Min();
     }

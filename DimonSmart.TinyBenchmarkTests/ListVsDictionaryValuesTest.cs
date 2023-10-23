@@ -1,9 +1,8 @@
-﻿using System.Text;
-using DimonSmart.TinyBenchmark.Attributes;
+﻿using DimonSmart.TinyBenchmark.Attributes;
 
 namespace DimonSmart.TinyBenchmarkTests;
 
-public class StringConcatenationTest
+public class ListVsDictionaryValuesTest
 {
     private static string[] allNames =
     {
@@ -20,20 +19,35 @@ public class StringConcatenationTest
         "Mr. Elephant", "Madame Gazelle", "Miss Rabbit", "Mr. Potato", "Doctor Brown Bear"
     };
 
+    private readonly List<string> _list;
+    private readonly Dictionary<string, string> _dictionary;
+
+    public ListVsDictionaryValuesTest()
+    {
+        _list = allNames.ToList();
+        _dictionary = allNames.ToDictionary(k => k, v => v);
+    }
+
+
     [TinyBenchmarkRangeParameter(0, 60, 5)] public int BenchmarkParameter { get; set; }
 
     [TinyBenchmark]
-    public void StringPlus(int parameter)
+    public void List(int parameter)
     {
-        var s = string.Empty;
-        for (var i = 0; i < parameter; i++) s = s + allNames[i];
+        var result = string.Empty;
+        foreach (var s in _list)
+        {
+            result = result + s;
+        }
     }
 
     [TinyBenchmark]
-    public void StringBuilder(int parameter)
+    public void Dictionary(int parameter)
     {
-        var sb = new StringBuilder();
-        for (var i = 0; i < parameter; i++) sb.Append(allNames[i]);
-        var s = sb.ToString();
+        var result = string.Empty;
+        foreach (var s in _dictionary.Values)
+        {
+            result = result + s;
+        }
     }
 }

@@ -54,7 +54,7 @@ public static class AttributeUtility
 
         foreach (var property in properties)
         {
-            if (Attribute.IsDefined(property, typeof(ParameterAttribute)))
+            if (Attribute.IsDefined(property, typeof(TinyBenchmarkParameterAttribute)))
             {
                 if (parameterProperty != null)
                 {
@@ -70,6 +70,6 @@ public static class AttributeUtility
 
     public static object[]? GetParametersFromAttribute(PropertyInfo? property)
     {
-        return property?.GetCustomAttribute<ParameterAttribute>()?.Values;
+        return property?.GetCustomAttribute<TinyBenchmarkParameterAttribute>()?.Values;
     }
 }

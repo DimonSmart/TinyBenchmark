@@ -1,9 +1,9 @@
 ﻿namespace DimonSmart.TinyBenchmark.Attributes;
 
 [AttributeUsage(AttributeTargets.Property)]
-public class ParameterAttribute : Attribute
+public class TinyBenchmarkParameterAttribute : Attribute
 {
-    public ParameterAttribute(params object[] values)
+    public TinyBenchmarkParameterAttribute(params object[] values)
     {
         Values = values;
     }
