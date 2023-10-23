@@ -6,7 +6,7 @@ public class TinyBenchmarkRangeParameterAttribute : TinyBenchmarkParameterAttrib
     public TinyBenchmarkRangeParameterAttribute(int from, int to, int step = 1)
     {
         var values = new List<object>(to - from);
-        for (var i = from; i < to; i+= step) values.Add(i);
+        for (var i = from; i < to; i += step) values.Add(i);
 
         Values = values.ToArray();
     }
