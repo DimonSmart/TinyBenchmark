@@ -1,6 +1,7 @@
 ﻿using DimonSmart.TinyBenchmark;
 using Xunit;
 using Xunit.Abstractions;
+using static DimonSmart.TinyBenchmark.SortTimeDirection;
 
 namespace DimonSmart.TinyBenchmarkTests;
 
@@ -18,15 +19,14 @@ public class TinyBenchmarkTestRunnerTest
     {
         TinyBenchmarkRunner
             .Create()
-            .WithMaxRunExecutionTime(TimeSpan.FromSeconds(2))
+            .WithMaxRunExecutionTime(TimeSpan.FromSeconds(10))
             // .WithBestTimeAsResult()
             .Run()
             .WithCsvExporter()
             .SaveRawResults()
             .WithGraphExporter()
-            // .ExportAllRawGraph()
-            // .OrderTimes()
-            // .ExportAllRawGraph()
+            .ExportAllRawGraph(AscendingTimes)
+            .ExportAllRawGraph(UnsortedTimes)
             .ExportAllFunctionsCompareGraph();
     }
 }
