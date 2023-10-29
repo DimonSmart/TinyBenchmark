@@ -1,6 +1,4 @@
-﻿using static DimonSmart.TinyBenchmark.SortDirection;
-
-namespace DimonSmart.TinyBenchmark.Exporters;
+﻿namespace DimonSmart.TinyBenchmark.Exporters;
 
 public interface IGraphExporter : IResultProcessor
 {
@@ -9,9 +7,8 @@ public interface IGraphExporter : IResultProcessor
     string RawDataFileNameTemplate { get; }
     IGraphExporter GraphSize(int width, int height);
     IGraphExporter SetRawDataFileNameTemplate(string fileNameTemplate);
-    IGraphExporter OrderTimes(SortDirection direction = Ascending);
-    IGraphExporter ExportAllRawGraph();
-    IGraphExporter ExportRawGraph(string className, string methodName, object? parameter);
+    IGraphExporter ExportAllRawGraph(SortTimeDirection sortTimesDirection = SortTimeDirection.UnsortedTimes);
+    IGraphExporter ExportRawGraph(string className, string methodName, object? parameter, SortTimeDirection sortTimesDirection);
     IGraphExporter ExportAllFunctionsCompareGraph(Type classType);
     IGraphExporter ExportAllFunctionsCompareGraph();
 }

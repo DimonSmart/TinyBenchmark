@@ -1,5 +1,5 @@
 ﻿using ScottPlot;
-using static DimonSmart.TinyBenchmark.SortDirection;
+using static DimonSmart.TinyBenchmark.SortTimeDirection;
 
 namespace DimonSmart.TinyBenchmark.Exporters;
 
@@ -13,7 +13,6 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         BeforeExport();
     }
 
-    public SortDirection SortTimesDirection { get; set; } = Unordered;
     public string ComparisionFileNameTemplate { get; set; } = "Compare-{ClassName}.png";
     public int Width { get; private set; } = 800;
     public int Height { get; private set; } = 600;
@@ -30,23 +29,17 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         return this;
     }
 
-    public IGraphExporter OrderTimes(SortDirection direction)
-    {
-        SortTimesDirection = direction;
-        return this;
-    }
-
-    public IGraphExporter ExportAllRawGraph()
+    public IGraphExporter ExportAllRawGraph(SortTimeDirection sortTimesDirection)
     {
         foreach (var methodExecutionResult in Data.Results)
         {
-            ExportRawGraph(methodExecutionResult);
+            ExportRawGraph(methodExecutionResult, sortTimesDirection);
         }
 
         return this;
     }
 
-    public IGraphExporter ExportRawGraph(string className, string methodName, object? parameter)
+    public IGraphExporter ExportRawGraph(string className, string methodName, object? parameter, SortTimeDirection sortTimesDirection = UnsortedTimes)
     {
         var classes = Data
             .Results
@@ -66,11 +59,17 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         }
 
         var parametrizedMethod = methods
-            .Where(f => (f.Method.Parameter == null && f.Method.Parameter == null) ||
-                        f.Method.Parameter.Equals(parameter));
+            .Where(mer => (mer.Method.Parameter == null && parameter == null) ||
+                   (parameter != null && parameter.Equals(mer.Method.Parameter)));
 
-        var executionResults = parametrizedMethod.Single();
-        ExportRawGraph(executionResults);
+        var executionResults = parametrizedMethod.SingleOrDefault();
+        if (executionResults == null)
+        {
+            throw new ArgumentException(
+                $"Benchmark with class:{className}, Method:{methodName} and Parameter:{(parameter == null ? "NULL" : parameter.ToString())}");
+        }
+
+        ExportRawGraph(executionResults, sortTimesDirection);
         return this;
     }
 
@@ -112,7 +111,7 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         else
         {
             dataX = classRunParameters.Select((value, index) => (double)index).ToArray();
-            labelX = classRunParameters.Select((value, index) => value?.ToString()).ToArray();
+            labelX = classRunParameters.Select((value, index) => value?.ToString() ?? "X").ToArray();
         }
 
         plot.XAxis.ManualTickPositions(dataX, labelX);
@@ -139,17 +138,17 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         return this;
     }
 
-    public IGraphExporter ExportRawGraph(MethodExecutionResults rmExecutionResults)
+    public IGraphExporter ExportRawGraph(MethodExecutionResults rmExecutionResults, SortTimeDirection sortTimesDirection)
     {
         var className = rmExecutionResults.Method.ClassType.Name;
         var methodName = rmExecutionResults.Method.MethodInfo.Name;
         var parameter = rmExecutionResults.Method.Parameter;
         var dataX = rmExecutionResults.Times.Select((_, index) => (double)(index + 1)).ToArray();
         var dataY = rmExecutionResults.Times.Select(t => t.TotalNanoseconds).ToArray();
-        dataY = SortTimesDirection switch
+        dataY = sortTimesDirection switch
         {
-            Ascending => dataY.OrderBy(t => t).ToArray(),
-            Descending => dataY.OrderByDescending(t => t).ToArray(),
+            AscendingTimes => dataY.OrderBy(t => t).ToArray(),
+            DescendingTimes => dataY.OrderByDescending(t => t).ToArray(),
             _ => dataY
         };
 
@@ -160,13 +159,13 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         plot.AddScatter(dataX, dataY, label: "Raw timings");
         plot.Legend();
         var fileName =
-            SubstituteFilenameTemplate(RawDataFileNameTemplate, className, methodName, parameter, SortTimesDirection);
+            SubstituteFilenameTemplate(RawDataFileNameTemplate, className, methodName, parameter, sortTimesDirection);
         plot.SaveFig(fileName);
         return this;
     }
 
     private string SubstituteFilenameTemplate(string template, string className, string methodName, object? parameter,
-        SortDirection sorted)
+        SortTimeDirection sorted)
     {
         var fileName = template
             .Replace("{methodName}", methodName, StringComparison.OrdinalIgnoreCase)
