@@ -18,15 +18,16 @@ public class TinyBenchmarkTestRunnerTest
     public void RunAllBenchmarks()
     {
         TinyBenchmarkRunner
-            .Create()
-            .WithMaxRunExecutionTime(TimeSpan.FromSeconds(10))
+            .Create(_output.WriteLine)
+            .WinMinMaxFunctionExecutionCount(100, 10000)
+            .WithMaxRunExecutionTime(TimeSpan.FromSeconds(60))
             // .WithBestTimeAsResult()
             .Run()
-            .WithCsvExporter()
-            .SaveRawResults()
-            .WithGraphExporter()
-            .ExportAllRawGraph(AscendingTimes)
-            .ExportAllRawGraph(UnsortedTimes)
-            .ExportAllFunctionsCompareGraph();
+        .WithCsvExporter()
+        .SaveRawResults()
+        .WithGraphExporter()
+        .ExportAllRawGraph(AscendingTimes)
+        .ExportAllRawGraph()
+        .ExportAllFunctionsCompareGraph();
     }
 }

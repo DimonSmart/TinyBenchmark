@@ -7,6 +7,7 @@ public class ExporterBaseClass : ResultProcessor
     public ExporterBaseClass(ITinyBenchmarkRunner tinyBenchmarkRunner, BenchmarkData data) :
         base(tinyBenchmarkRunner, data)
     {
+        BeforeExport();
     }
 
     public string ResultsFolder { get; set; } = "TinyBenchmark";
