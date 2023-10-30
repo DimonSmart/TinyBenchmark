@@ -24,11 +24,14 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
     public IResultProcessor Run()
     {
         var methodExecutionInfos = GetMethodExecutionInfos();
-
+        var classesCount = methodExecutionInfos.Select(m => m.ClassType).Distinct().Count();
+        _writeMessage?.Invoke($"Run TinyBenchmark for:{classesCount} classes");
         var results = methodExecutionInfos
             .ToDictionary(m => m, v => new List<TimeSpan>());
+        _writeMessage?.Invoke("1. Warming UP phase");
         foreach (var result in results)
         {
+            LogCurrentMethod(result.Key);
             PrepareRun();
             for (var i = 0; i < _data.WarmUpCount; i++)
             {
@@ -36,6 +39,7 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
             }
         }
 
+        _writeMessage?.Invoke("2. Measuring phase");
         var total = results.Values
             .Select(t => t.Average(i => i.TotalNanoseconds))
             .Sum();
@@ -63,6 +67,8 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
                 executionCount = _data.MaxFunctionExecutionCount.Value;
             }
 
+            LogCurrentMethod(result.Key);
+
             for (var i = 0; i < executionCount; i++)
             {
                 result.Value.Add(MeasureExecutionTime(result.Key.Action));
@@ -74,6 +80,11 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
             .ToList();
 
         return new ResultProcessor(this, _data);
+    }
+
+    private void LogCurrentMethod(MethodExecutionInfo method)
+    {
+        _writeMessage?.Invoke($"{method.ClassType.Name}.{method.MethodInfo.Name}({method.Parameter})");
     }
 
     public static TinyBenchmarkRunner Create(Action<string>? writeMessage = null)
@@ -113,7 +124,7 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
 
     internal static TimeSpan MeasureExecutionTime(Action action)
     {
-        // PrepareRun();
+        //PrepareRun();
         // GC.TryStartNoGCRegion(100 * 1024 * 1024);
         var stopwatch = Stopwatch.StartNew();
         action();

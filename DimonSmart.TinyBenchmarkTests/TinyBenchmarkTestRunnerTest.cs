@@ -18,7 +18,7 @@ public class TinyBenchmarkTestRunnerTest
     public void RunAllBenchmarks()
     {
         TinyBenchmarkRunner
-            .Create()
+            .Create(_output.WriteLine)
             .WithMaxRunExecutionTime(TimeSpan.FromSeconds(10))
             // .WithBestTimeAsResult()
             .Run()
