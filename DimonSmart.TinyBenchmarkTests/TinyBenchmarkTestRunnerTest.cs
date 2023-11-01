@@ -19,6 +19,7 @@ public class TinyBenchmarkTestRunnerTest
     {
         TinyBenchmarkRunner
             .Create(_output.WriteLine)
+            .WithRunCountLimits(100, 500)
             .WithMaxRunExecutionTime(TimeSpan.FromSeconds(10))
             // .WithBestTimeAsResult()
             .Run()
@@ -26,7 +27,7 @@ public class TinyBenchmarkTestRunnerTest
             .SaveRawResults()
             .WithGraphExporter()
             .ExportAllRawGraph(AscendingTimes)
-            .ExportAllRawGraph(UnsortedTimes)
+            .ExportAllRawGraph()
             .ExportAllFunctionsCompareGraph();
     }
 }

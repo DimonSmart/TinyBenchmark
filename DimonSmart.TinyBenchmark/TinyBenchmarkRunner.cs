@@ -33,10 +33,7 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         {
             LogCurrentMethod(result.Key);
             PrepareRun();
-            for (var i = 0; i < _data.WarmUpCount; i++)
-            {
-                result.Value.Add(MeasureExecutionTime(result.Key.Action));
-            }
+            for (var i = 0; i < _data.WarmUpCount; i++) result.Value.Add(MeasureExecutionTime(result.Key.Action));
         }
 
         _writeMessage?.Invoke("2. Measuring phase");
@@ -69,10 +66,7 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
 
             LogCurrentMethod(result.Key);
 
-            for (var i = 0; i < executionCount; i++)
-            {
-                result.Value.Add(MeasureExecutionTime(result.Key.Action));
-            }
+            for (var i = 0; i < executionCount; i++) result.Value.Add(MeasureExecutionTime(result.Key.Action));
         }
 
         _data.Results = results
@@ -80,6 +74,12 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
             .ToList();
 
         return new ResultProcessor(this, _data);
+    }
+
+    public ITinyBenchmarkRunner WithMaxRunExecutionTime(TimeSpan time)
+    {
+        _data.MaxRunExecutionTime = time;
+        return this;
     }
 
     private void LogCurrentMethod(MethodExecutionInfo method)
@@ -182,12 +182,6 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
 
         _data.MinFunctionExecutionCount = minFunctionExecutionCount;
         _data.MaxFunctionExecutionCount = maxFunctionExecutionCount;
-        return this;
-    }
-
-    public TinyBenchmarkRunner WithMaxRunExecutionTime(TimeSpan time)
-    {
-        _data.MaxRunExecutionTime = time;
         return this;
     }
 

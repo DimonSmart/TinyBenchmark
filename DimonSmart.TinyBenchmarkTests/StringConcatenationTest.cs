@@ -20,7 +20,7 @@ public class StringConcatenationTest
         "Mr. Elephant", "Madame Gazelle", "Miss Rabbit", "Mr. Potato", "Doctor Brown Bear"
     };
 
-    [TinyBenchmarkRangeParameter(0, 60, 5)]
+    [TinyBenchmarkRangeParameter(1, 60, 5)]
     public int BenchmarkParameter { get; set; }
 
     [TinyBenchmark]
