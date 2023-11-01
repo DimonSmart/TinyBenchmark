@@ -13,6 +13,7 @@ public sealed class TimeSpanToMillisecondsConverter : DefaultTypeConverter
         {
             return timeSpan.TotalNanoseconds.ToString(CultureInfo.InvariantCulture);
         }
+
         return base.ConvertToString(value, row, memberMapData);
     }
 }

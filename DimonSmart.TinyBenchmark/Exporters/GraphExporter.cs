@@ -10,7 +10,6 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
     public GraphExporter(ITinyBenchmarkRunner tinyBenchmarkRunner, BenchmarkData data) : base(tinyBenchmarkRunner, data)
     {
         _tinyBenchmarkRunner = tinyBenchmarkRunner;
-        BeforeExport();
     }
 
     public string ComparisionFileNameTemplate { get; set; } = "Compare-{ClassName}.png";
@@ -39,7 +38,8 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         return this;
     }
 
-    public IGraphExporter ExportRawGraph(string className, string methodName, object? parameter, SortTimeDirection sortTimesDirection = UnsortedTimes)
+    public IGraphExporter ExportRawGraph(string className, string methodName, object? parameter,
+        SortTimeDirection sortTimesDirection = UnsortedTimes)
     {
         var classes = Data
             .Results
@@ -60,7 +60,7 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
 
         var parametrizedMethod = methods
             .Where(mer => (mer.Method.Parameter == null && parameter == null) ||
-                   (parameter != null && parameter.Equals(mer.Method.Parameter)));
+                          (parameter != null && parameter.Equals(mer.Method.Parameter)));
 
         var executionResults = parametrizedMethod.SingleOrDefault();
         if (executionResults == null)
@@ -82,6 +82,7 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         {
             ExportAllFunctionsCompareGraph(cls);
         }
+
         return this;
     }
 
@@ -138,7 +139,8 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         return this;
     }
 
-    public IGraphExporter ExportRawGraph(MethodExecutionResults rmExecutionResults, SortTimeDirection sortTimesDirection)
+    public IGraphExporter ExportRawGraph(MethodExecutionResults rmExecutionResults,
+        SortTimeDirection sortTimesDirection)
     {
         var className = rmExecutionResults.Method.ClassType.Name;
         var methodName = rmExecutionResults.Method.MethodInfo.Name;
