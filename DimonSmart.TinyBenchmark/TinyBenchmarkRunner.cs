@@ -1,24 +1,19 @@
 ﻿using System.Diagnostics;
 using System.Reflection;
 using DimonSmart.TinyBenchmark.Exporters;
+using DimonSmart.TinyBenchmark.Utils;
 using static DimonSmart.TinyBenchmark.AttributeUtility;
 
 namespace DimonSmart.TinyBenchmark;
 
 public class TinyBenchmarkRunner : ITinyBenchmarkRunner
 {
+    private readonly BenchmarkData _data = new();
     private readonly Action<string>? _writeMessage;
-    private BenchmarkData _data = new();
 
     private TinyBenchmarkRunner(Action<string>? writeMessage)
     {
         _writeMessage = writeMessage;
-    }
-
-    public ITinyBenchmarkRunner Reset()
-    {
-        _data = new BenchmarkData();
-        return this;
     }
 
     public IResultProcessor Run()
@@ -28,43 +23,61 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         _writeMessage?.Invoke($"Run TinyBenchmark for:{classesCount} classes");
         var results = methodExecutionInfos
             .ToDictionary(m => m, v => new List<TimeSpan>());
-        _writeMessage?.Invoke("1. Warming UP phase");
-        foreach (var result in results)
+        long totalTicks = 0;
+
+        // Measure average timing only if total run limit applied
+        if (_data.BenchmarkDurationLimit.HasValue)
         {
-            LogCurrentMethod(result.Key);
-            PrepareRun();
-            for (var i = 0; i < _data.WarmUpCount; i++) result.Value.Add(MeasureExecutionTime(result.Key.Action));
+            _writeMessage?.Invoke("1. Warming UP phase (time pre-calculation)");
+            foreach (var result in results)
+            {
+                LogCurrentMethod(result.Key);
+                PrepareRun();
+                for (var i = 0; i < _data.BenchmarkDurationLimitInitIterations; i++)
+                    result.Value.Add(MeasureExecutionTime(result.Key.Action));
+            }
+
+            // Remove
+            totalTicks = results.Values
+                .Select(t => (long)t.Select(i => i.Ticks).Average())
+                .Sum();
+            _writeMessage?.Invoke($"One time full run time is:{TimeSpan.FromTicks(totalTicks).FormatTimeSpan()}");
         }
 
         _writeMessage?.Invoke("2. Measuring phase");
-        var total = results.Values
-            .Select(t => t.Average(i => i.TotalNanoseconds))
-            .Sum();
-
-        var totalLimit = _data.MaxRunExecutionTime;
+        var totalLimit = _data.BenchmarkDurationLimit;
 
         foreach (var result in results)
         {
-            var thisRunTime = result.Value.Select(s => s.TotalNanoseconds).Average();
-            int? calculatedNumberOfExecutions = null;
+            var executionCount = _data.MinFunctionExecutionCount;
             if (totalLimit.HasValue)
             {
-                calculatedNumberOfExecutions =
-                    (int)(totalLimit.Value.TotalNanoseconds / (thisRunTime * results.Count));
+                // var thisRunTicks = (long)result.Value.Select(t => t.Ticks).Average();
+                // Percentile50
+                var thisRunTicks = result.Value.Percentile50().Ticks;
+                var ticksLimit = thisRunTicks * totalLimit.Value.Ticks / (double)totalTicks;
+                int? calculatedNumberOfExecutions =
+                    (int)(ticksLimit * _data.BenchmarkDurationLimitInitIterations / totalTicks);
+                executionCount = calculatedNumberOfExecutions.Value;
+                _writeMessage?.Invoke($"Calculated run count:{calculatedNumberOfExecutions}");
             }
 
-            var executionCount = _data.MinFunctionExecutionCount;
-            if (calculatedNumberOfExecutions > executionCount)
+            if (executionCount <= _data.MinFunctionExecutionCount)
             {
-                executionCount = calculatedNumberOfExecutions.Value;
+                executionCount = _data.MinFunctionExecutionCount;
+                _writeMessage?.Invoke($"Minimum count limit applied:{executionCount}");
             }
 
             if (executionCount > _data.MaxFunctionExecutionCount)
             {
                 executionCount = _data.MaxFunctionExecutionCount.Value;
+                _writeMessage?.Invoke($"Maximum count limit applied:{executionCount}");
             }
 
             LogCurrentMethod(result.Key);
+
+            // second time warm up
+            for (var i = 0; i < 10; i++) MeasureExecutionTime(result.Key.Action);
 
             for (var i = 0; i < executionCount; i++) result.Value.Add(MeasureExecutionTime(result.Key.Action));
         }
@@ -76,9 +89,30 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         return new ResultProcessor(this, _data);
     }
 
-    public ITinyBenchmarkRunner WithMaxRunExecutionTime(TimeSpan time)
+    public ITinyBenchmarkRunner WithMaxRunExecutionTime(TimeSpan time, int preRunCount)
     {
-        _data.MaxRunExecutionTime = time;
+        _data.BenchmarkDurationLimit = time;
+        _data.BenchmarkDurationLimitInitIterations = preRunCount;
+        return this;
+    }
+
+    public ITinyBenchmarkRunner WinMinMaxFunctionExecutionCount(int minFunctionExecutionCount,
+        int? maxFunctionExecutionCount)
+    {
+        if (minFunctionExecutionCount < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(minFunctionExecutionCount), minFunctionExecutionCount,
+                "Must be greater then 1");
+        }
+
+        if (minFunctionExecutionCount > maxFunctionExecutionCount)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maxFunctionExecutionCount), maxFunctionExecutionCount,
+                $"Must be greater then {nameof(minFunctionExecutionCount)}");
+        }
+
+        _data.MinFunctionExecutionCount = minFunctionExecutionCount;
+        _data.MaxFunctionExecutionCount = maxFunctionExecutionCount;
         return this;
     }
 
@@ -166,28 +200,9 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         return methodExecutionInfos;
     }
 
-    public ITinyBenchmarkRunner WithRunCountLimits(int minFunctionExecutionCount, int? maxFunctionExecutionCount = null)
-    {
-        if (minFunctionExecutionCount < 1)
-        {
-            throw new ArgumentOutOfRangeException(nameof(minFunctionExecutionCount), minFunctionExecutionCount,
-                "Must be greater then 1");
-        }
-
-        if (minFunctionExecutionCount > maxFunctionExecutionCount)
-        {
-            throw new ArgumentOutOfRangeException(nameof(maxFunctionExecutionCount), maxFunctionExecutionCount,
-                $"Must be greater then {nameof(minFunctionExecutionCount)}");
-        }
-
-        _data.MinFunctionExecutionCount = minFunctionExecutionCount;
-        _data.MaxFunctionExecutionCount = maxFunctionExecutionCount;
-        return this;
-    }
-
     public TinyBenchmarkRunner WithoutRunExecutionTimeLimit()
     {
-        _data.MaxRunExecutionTime = null;
+        _data.BenchmarkDurationLimit = null;
         return this;
     }
 

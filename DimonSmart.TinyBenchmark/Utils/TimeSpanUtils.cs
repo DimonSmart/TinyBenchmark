@@ -1,8 +1,8 @@
-﻿namespace DimonSmart.TinyBenchmark.Exporters;
+﻿namespace DimonSmart.TinyBenchmark.Utils;
 
 public static class TimeSpanUtils
 {
-    public static TimeSpan Percentile50(IEnumerable<TimeSpan> times)
+    public static TimeSpan Percentile50(this IEnumerable<TimeSpan> times)
     {
         var sortedList = times.OrderBy(ts => ts).ToList();
 
