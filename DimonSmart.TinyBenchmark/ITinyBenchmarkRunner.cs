@@ -12,14 +12,14 @@ public interface ITinyBenchmarkRunner
     /// to satisfy this limit
     /// </summary>
     /// <param name="time">Maximum benchmarking time</param>
-    /// <param name="preRunCount">
+    /// <param name="benchmarkDurationLimitInitIterations">
     /// How many times each function should be executed for calculate limits to satisfy
     /// MaxRunExecutionTime
     /// </param>
     /// <returns></returns>
-    ITinyBenchmarkRunner WithMaxRunExecutionTime(TimeSpan time, int preRunCount = 100);
+    ITinyBenchmarkRunner WithMaxRunExecutionTime(TimeSpan time, int benchmarkDurationLimitInitIterations = 100);
 
-    ITinyBenchmarkRunner WinMinMaxFunctionExecutionCount(int min, int? max);
+    ITinyBenchmarkRunner WinMinMaxFunctionExecutionCount(int min, int? max = null);
 
     /// <summary>
     /// Run benchmark
