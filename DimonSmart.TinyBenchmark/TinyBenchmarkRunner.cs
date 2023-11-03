@@ -121,7 +121,7 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         _writeMessage?.Invoke($"{method.ClassType.Name}.{method.MethodInfo.Name}({method.Parameter})");
     }
 
-    public static TinyBenchmarkRunner Create(Action<string>? writeMessage = null)
+    public static ITinyBenchmarkRunner Create(Action<string>? writeMessage = null)
     {
         return new TinyBenchmarkRunner(writeMessage);
     }
