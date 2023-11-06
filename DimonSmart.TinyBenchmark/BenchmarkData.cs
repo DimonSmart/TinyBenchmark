@@ -1,6 +1,4 @@
-﻿using DimonSmart.TinyBenchmark.Utils;
-
-namespace DimonSmart.TinyBenchmark;
+﻿namespace DimonSmart.TinyBenchmark;
 
 /// <summary>
 /// Represents the data and parameters for benchmarking.
@@ -28,10 +26,10 @@ public class BenchmarkData
     /// </summary>
     public int? MaxFunctionExecutionCount { get; internal set; } = 10000;
 
-    /// <summary>
-    /// Gets or sets the method for obtaining the benchmark result from a collection of execution times.
-    /// </summary>
-    public Func<IEnumerable<TimeSpan>, TimeSpan> GetResult { get; internal set; } = TimeSpanUtils.Percentile50;
+    // /// <summary>
+    // /// Gets or sets the method for obtaining the benchmark result from a collection of execution times.
+    // /// </summary>
+    // public Func<IEnumerable<TimeSpan>, TimeSpan> GetResult { get; internal set; } = TimeSpanUtils.Percentile50;
 
     /// <summary>
     /// Gets the results of method execution.

@@ -2,6 +2,7 @@
 
 public class ExporterBaseClass : ResultProcessor
 {
+    public const string ResultsFolder = "TinyBenchmark";
     private bool _directoryCreated;
 
     public ExporterBaseClass(ITinyBenchmarkRunner tinyBenchmarkRunner, BenchmarkData data) :
@@ -9,8 +10,6 @@ public class ExporterBaseClass : ResultProcessor
     {
         BeforeExport();
     }
-
-    public string ResultsFolder { get; set; } = "TinyBenchmark";
 
     protected void BeforeExport()
     {
