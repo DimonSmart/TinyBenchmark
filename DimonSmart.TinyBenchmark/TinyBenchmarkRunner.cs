@@ -18,6 +18,8 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
 
     public IResultProcessor Run()
     {
+        _writeMessage?.Invoke(
+            $"Result folder:{Path.Combine(Directory.GetCurrentDirectory(), ExporterBaseClass.ResultsFolder)}");
         var methodExecutionInfos = GetMethodExecutionInfos();
         var classesCount = methodExecutionInfos.Select(m => m.ClassType).Distinct().Count();
         _writeMessage?.Invoke($"Run TinyBenchmark for:{classesCount} classes");
@@ -25,7 +27,7 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
             .ToDictionary(m => m, v => new List<TimeSpan>());
         long totalTicks = 0;
 
-        // Measure average timing only if total run limit applied
+        // Measure average timing only if BenchmarkDurationLimit applied
         if (_data.BenchmarkDurationLimit.HasValue)
         {
             _writeMessage?.Invoke("1. Warming UP phase (time pre-calculation)");
@@ -37,7 +39,6 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
                     result.Value.Add(MeasureExecutionTime(result.Key.Action));
             }
 
-            // Remove
             totalTicks = results.Values
                 .Select(t => (long)t.Select(i => i.Ticks).Average())
                 .Sum();
@@ -52,9 +53,7 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
             var executionCount = _data.MinFunctionExecutionCount;
             if (totalLimit.HasValue)
             {
-                // var thisRunTicks = (long)result.Value.Select(t => t.Ticks).Average();
-                // Percentile50
-                var thisRunTicks = result.Value.Percentile50().Ticks;
+                var thisRunTicks = result.Value.CalculatePercentile(50).Ticks;
                 var ticksLimit = thisRunTicks * totalLimit.Value.Ticks / (double)totalTicks;
                 int? calculatedNumberOfExecutions =
                     (int)(ticksLimit * _data.BenchmarkDurationLimitInitIterations / totalTicks);
@@ -76,7 +75,7 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
 
             LogCurrentMethod(result.Key);
 
-            // second time warm up
+            // Pre measure warm up
             for (var i = 0; i < 10; i++) MeasureExecutionTime(result.Key.Action);
 
             for (var i = 0; i < executionCount; i++) result.Value.Add(MeasureExecutionTime(result.Key.Action));
@@ -203,18 +202,6 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
     public TinyBenchmarkRunner WithoutRunExecutionTimeLimit()
     {
         _data.BenchmarkDurationLimit = null;
-        return this;
-    }
-
-    public ITinyBenchmarkRunner WithPercentile50AsResult()
-    {
-        _data.GetResult = TimeSpanUtils.Percentile50;
-        return this;
-    }
-
-    public ITinyBenchmarkRunner WithBestTimeAsResult()
-    {
-        _data.GetResult = TimeSpanUtils.BestResult;
         return this;
     }
 }
