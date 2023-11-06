@@ -1,5 +1,8 @@
-﻿using ScottPlot;
+﻿using DimonSmart.TinyBenchmark.Utils;
+using ScottPlot;
+using ScottPlot.Plottable;
 using static DimonSmart.TinyBenchmark.SortTimeDirection;
+using static DimonSmart.TinyBenchmark.Exporters.IGraphExporter;
 
 namespace DimonSmart.TinyBenchmark.Exporters;
 
@@ -73,20 +76,20 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         return this;
     }
 
-    public IGraphExporter ExportAllFunctionsCompareGraph()
+    public IGraphExporter ExportAllFunctionsCompareGraph(GraphExportOption options)
     {
         var classes = Data
             .Results.Select(r => r.Method.ClassType).Distinct();
 
         foreach (var cls in classes)
         {
-            ExportAllFunctionsCompareGraph(cls);
+            ExportAllFunctionsCompareGraph(cls, options);
         }
 
         return this;
     }
 
-    public IGraphExporter ExportAllFunctionsCompareGraph(Type classType)
+    public IGraphExporter ExportAllFunctionsCompareGraph(Type classType, GraphExportOption options)
     {
         var classFunctions = Data
             .Results
@@ -101,6 +104,7 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         var plot = new Plot(Width, Height);
         plot.XLabel("Run number");
         plot.YLabel("Time, μs");
+        plot.Title($"{classType.Name}");
 
         double[] dataX;
         string[] labelX;
@@ -120,16 +124,47 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         foreach (var function in byFunction)
         {
             var dataY = function
-                .Select(f => Data.GetResult(f.Times).TotalNanoseconds).ToArray();
-            plot.AddScatter(dataX, dataY, label: $"{function.Key}");
+                .Select(f => f.Times.CalculatePercentile(50).TotalNanoseconds)
+                .ToArray();
+            var scatter = plot.AddScatter(dataX, dataY, label: $"{function.Key}", lineWidth: 2);
+            if (options == GraphExportOption.IncludeErrorMarks)
+            {
+                AddErrorMarks(function, dataY, scatter);
+            }
         }
 
         plot.Legend();
         var fileName =
-            SubstituteComparisionFilenameTemplate(ComparisionFileNameTemplate, classType.Name,
-                Data.GetResult.Method.Name);
+            SubstituteComparisionFilenameTemplate(ComparisionFileNameTemplate, classType.Name);
         plot.SaveFig(fileName);
         return this;
+
+        void AddErrorMarks(IGrouping<string, MethodExecutionResults> function, double[] dataY, ScatterPlot scatter)
+        {
+            var dataDeltaMinus = function
+                .Select(f =>
+                    f.Times.CalculatePercentile(50).TotalNanoseconds -
+                    f.Times.CalculatePercentile(20).TotalNanoseconds)
+                .Select(f => f < 0 ? 0.0 : f)
+                .ToArray();
+
+            var dataDeltaPlus = function
+                .Select(f =>
+                    f.Times.CalculatePercentile(80).TotalNanoseconds -
+                    f.Times.CalculatePercentile(50).TotalNanoseconds)
+                .Select(f => f < 0 ? 0.0 : f)
+                .ToArray();
+
+            plot.AddErrorBars(
+                dataX,
+                dataY,
+                xErrorsNegative: new double[dataY.Length],
+                xErrorsPositive: new double[dataY.Length],
+                yErrorsNegative: dataDeltaMinus,
+                yErrorsPositive: dataDeltaPlus,
+                color: scatter.Color
+            );
+        }
     }
 
     public IGraphExporter GraphSize(int width, int height)
@@ -177,11 +212,10 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         return Path.Combine(ResultsFolder, fileName);
     }
 
-    private string SubstituteComparisionFilenameTemplate(string template, string className, string selector)
+    private string SubstituteComparisionFilenameTemplate(string template, string className)
     {
         var fileName = template
-            .Replace("{className}", className, StringComparison.OrdinalIgnoreCase)
-            .Replace("{selector}", selector, StringComparison.OrdinalIgnoreCase);
+            .Replace("{className}", className, StringComparison.OrdinalIgnoreCase);
         return Path.Combine(ResultsFolder, fileName);
     }
 }
