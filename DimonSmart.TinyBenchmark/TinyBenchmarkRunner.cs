@@ -18,11 +18,10 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
 
     public IResultProcessor Run()
     {
-        _writeMessage?.Invoke(
-            $"Result folder:{Path.Combine(Directory.GetCurrentDirectory(), ExporterBaseClass.ResultsFolder)}");
+        Log($"Result folder:{Path.Combine(Directory.GetCurrentDirectory(), ExporterBaseClass.ResultsFolder)}");
         var methodExecutionInfos = GetMethodExecutionInfos();
         var classesCount = methodExecutionInfos.Select(m => m.ClassType).Distinct().Count();
-        _writeMessage?.Invoke($"Run TinyBenchmark for:{classesCount} classes");
+        Log($"Run TinyBenchmark for:{classesCount} classes");
         var results = methodExecutionInfos
             .ToDictionary(m => m, v => new List<TimeSpan>());
         long totalTicks = 0;
@@ -30,7 +29,7 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         // Measure average timing only if BenchmarkDurationLimit applied
         if (_data.BenchmarkDurationLimit.HasValue)
         {
-            _writeMessage?.Invoke("1. Warming UP phase (time pre-calculation)");
+            Log("1. Warming UP phase (time pre-calculation)");
             foreach (var result in results)
             {
                 LogCurrentMethod(result.Key);
@@ -42,10 +41,10 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
             totalTicks = results.Values
                 .Select(t => (long)t.Select(i => i.Ticks).Average())
                 .Sum();
-            _writeMessage?.Invoke($"One time full run time is:{TimeSpan.FromTicks(totalTicks).FormatTimeSpan()}");
+            Log($"One time full run time is:{TimeSpan.FromTicks(totalTicks).FormatTimeSpan()}");
         }
 
-        _writeMessage?.Invoke("2. Measuring phase");
+        Log("2. Measuring phase");
         var totalLimit = _data.BenchmarkDurationLimit;
 
         foreach (var result in results)
@@ -58,19 +57,19 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
                 int? calculatedNumberOfExecutions =
                     (int)(ticksLimit * _data.BenchmarkDurationLimitInitIterations / totalTicks);
                 executionCount = calculatedNumberOfExecutions.Value;
-                _writeMessage?.Invoke($"Calculated run count:{calculatedNumberOfExecutions}");
+                Log($"Calculated run count:{calculatedNumberOfExecutions}");
             }
 
             if (executionCount <= _data.MinFunctionExecutionCount)
             {
                 executionCount = _data.MinFunctionExecutionCount;
-                _writeMessage?.Invoke($"Minimum count limit applied:{executionCount}");
+                Log($"Minimum count limit applied:{executionCount}");
             }
 
             if (executionCount > _data.MaxFunctionExecutionCount)
             {
                 executionCount = _data.MaxFunctionExecutionCount.Value;
-                _writeMessage?.Invoke($"Maximum count limit applied:{executionCount}");
+                Log($"Maximum count limit applied:{executionCount}");
             }
 
             LogCurrentMethod(result.Key);
@@ -117,7 +116,7 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
 
     private void LogCurrentMethod(MethodExecutionInfo method)
     {
-        _writeMessage?.Invoke($"{method.ClassType.Name}.{method.MethodInfo.Name}({method.Parameter})");
+        Log($"{method.ClassType.Name}.{method.MethodInfo.Name}({method.Parameter})");
     }
 
     public static ITinyBenchmarkRunner Create(Action<string>? writeMessage = null)
@@ -203,5 +202,10 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
     {
         _data.BenchmarkDurationLimit = null;
         return this;
+    }
+
+    private void Log(string message)
+    {
+        _writeMessage?.Invoke(message);
     }
 }
