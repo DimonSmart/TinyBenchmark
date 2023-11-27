@@ -9,12 +9,15 @@ public static class AttributeUtility
     {
         var classes = new List<Type>();
         var loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies();
+
         foreach (var loadedAssembly in loadedAssemblies)
         {
             classes.AddRange(GetClassesWithMethodsMarkedWithAttribute<TinyBenchmarkAttribute>(loadedAssembly));
         }
 
-        return classes;
+        var selectedClasses = classes.Where(type => type.GetCustomAttribute<TinyBenchmarkOnlyThisClassAttribute>() != null).ToList();
+
+        return selectedClasses.Any() ? selectedClasses.AsReadOnly() : classes.AsReadOnly();
     }
 
     public static IReadOnlyCollection<Type> GetClassesWithMethodsMarkedWithAttribute<T>(Assembly assembly)
