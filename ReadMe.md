@@ -95,3 +95,46 @@ This graph also represents raw timing values but sorted.
 A typical graph shape should resemble an almost horizontal line with a sharp rise at the end.
 This sharp end corresponds to longer execution times, and the shorter this rising part, the better.
 ![Function comparision](https://raw.githubusercontent.com/DimonSmart/TinyBenchmark/master/DimonSmart.TinyBenchmark/Docs/Images/Raw-ExampleClassTest-Function1-1-Ascending.png)
+
+## Attributes
+
+### [TinyBenchmarkOnlyThisClassAttribute]
+
+The `TinyBenchmarkOnlyThisClassAttribute` is designed for classes within the TinyBenchmark library. Applying this attribute to a class allows developers to streamline the test development process. It enables the easy exclusion of all benchmarks within a class except for the one currently under active development. By doing so, developers can maintain a clean and focused Git changes list, concentrating changes exclusively on the actively developed test.
+
+### [TinyBenchmarkAttribute]
+
+The `TinyBenchmarkAttribute` is utilized for marking methods within benchmark classes. When applied, this attribute signals that the marked methods should be included in the benchmarking process. This attribute is crucial for pinpointing and measuring the performance of specific functions during benchmarking.
+
+### [TinyBenchmarkParameterAttribute]
+
+The `TinyBenchmarkParameterAttribute` is used to designate parameters for functions under benchmark. Applied to properties within benchmark classes, this attribute allows developers to provide specific values for parameters. This flexibility facilitates the variation of inputs during benchmarking, enabling the measurement of performance under different scenarios.
+
+### [TinyBenchmarkRangeParameterAttribute]
+
+The `TinyBenchmarkRangeParameterAttribute` is specifically tailored for defining range parameters for functions under benchmark. Applied to properties within benchmark classes, this attribute simplifies the specification of a range of values for parameters. This enhances flexibility in benchmarking scenarios, allowing developers to conduct tests across a specified range of inputs.
+
+#### Usage Example
+
+Consider the following example with a hypothetical benchmark class:
+
+```csharp
+[TinyBenchmarkOnlyThisClass]
+public class MyBenchmarkClass
+{
+    // Initialization logic here...
+
+    [TinyBenchmarkRangeParameter(1, 60, 1)]
+    public int BenchmarkParameter { get; set; }
+
+    [TinyBenchmark]
+    public void MyBenchmarkedMethod(int parameter)
+    {
+        // Benchmark logic for MyBenchmarkedMethod...
+    }
+
+    // Additional benchmark methods...
+}
+```
+
+In this example, the `MyBenchmarkClass` class demonstrates the application of various TinyBenchmark attributes. These attributes contribute to a focused and effective benchmarking environment, enabling developers to streamline test development and measure performance with precision.
