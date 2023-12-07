@@ -2,7 +2,6 @@
 
 namespace DimonSmart.TinyBenchmarkTests;
 
-[TinyBenchmarkOnlyThisClass]
 public class ListVsHashContainsTest : VsTestsBase
 {
     private static readonly List<string>[] Strings;
