@@ -20,11 +20,11 @@ public class TinyBenchmarkTestRunnerTest
     {
         TinyBenchmarkRunner
             .Create(_output.WriteLine)
-            .WithMaxRunExecutionTime(TimeSpan.FromSeconds(60))
+            .WithMaxRunExecutionTime(TimeSpan.FromSeconds(180))
             .WinMinMaxFunctionExecutionCount(1000, 100000)
             .Run()
             .WithCsvExporter()
-            .SaveRawResults()
+            .SaveAllRawResults(50)
             .WithGraphExporter()
             .ExportAllRawGraph(AscendingTimes)
             .ExportAllRawGraph()

@@ -18,7 +18,9 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
 
     public IResultProcessor Run()
     {
-        Log($"Result folder:{Path.Combine(Directory.GetCurrentDirectory(), ExporterBaseClass.ResultsFolder)}");
+        var resultFolderPath = Path.Combine(Directory.GetCurrentDirectory(), ExporterBaseClass.ResultsFolder);
+        var folderUri = new Uri(resultFolderPath).AbsoluteUri;
+        Log($"Result folder:{folderUri}");
         var methodExecutionInfos = GetMethodExecutionInfos();
         var classesCount = methodExecutionInfos.Select(m => m.ClassType).Distinct().Count();
         Log($"Run TinyBenchmark for:{classesCount} classes");
@@ -26,7 +28,6 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
             .ToDictionary(m => m, v => new List<TimeSpan>());
         long totalTicks = 0;
 
-        // Measure average timing only if BenchmarkDurationLimit applied
         if (_data.BenchmarkDurationLimit.HasValue)
         {
             Log("1. Warming UP phase (time pre-calculation)");
@@ -75,9 +76,15 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
             LogCurrentMethod(result.Key);
 
             // Pre measure warm up
-            for (var i = 0; i < 10; i++) MeasureExecutionTime(result.Key.Action);
+            for (var i = 0; i < 10; i++)
+            {
+                MeasureExecutionTime(result.Key.Action);
+            }
 
-            for (var i = 0; i < executionCount; i++) result.Value.Add(MeasureExecutionTime(result.Key.Action));
+            for (var i = 0; i < executionCount; i++)
+            {
+                result.Value.Add(MeasureExecutionTime(result.Key.Action));
+            }
         }
 
         _data.Results = results
