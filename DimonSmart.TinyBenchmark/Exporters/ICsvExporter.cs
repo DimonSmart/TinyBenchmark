@@ -2,5 +2,5 @@
 
 public interface ICsvExporter : IResultProcessor
 {
-    ICsvExporter SaveRawResults();
+    ICsvExporter SaveAllRawResults(int limit = int.MaxValue);
 }
