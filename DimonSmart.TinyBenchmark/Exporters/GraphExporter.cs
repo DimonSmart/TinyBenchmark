@@ -15,7 +15,7 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         _tinyBenchmarkRunner = tinyBenchmarkRunner;
     }
 
-    public string ComparisionFileNameTemplate { get; set; } = "Compare-{ClassName}.png";
+    public string ComparisonFileNameTemplate { get; set; } = "Compare-{ClassName}.png";
     public int Width { get; private set; } = 800;
     public int Height { get; private set; } = 600;
     public string RawDataFileNameTemplate { get; set; } = "Raw-{ClassName}-{MethodName}-{Parameter}-{Sorted}.png";
@@ -78,15 +78,17 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
 
     public IGraphExporter ExportAllFunctionsCompareGraph(GraphExportOption options)
     {
-        var classes = Data
-            .Results.Select(r => r.Method.ClassType).Distinct();
-
-        foreach (var cls in classes)
-        {
-            ExportAllFunctionsCompareGraph(cls, options);
-        }
-
+        DoExportByClass(options);
         return this;
+    }
+
+    protected override void ExportOneClass(Type type, object? options)
+    {
+        if (options is not GraphExportOption graphOptions)
+        {
+            throw new ArgumentException("Invalid options type", nameof(options));
+        }
+        ExportAllFunctionsCompareGraph(type, graphOptions);
     }
 
     public IGraphExporter ExportAllFunctionsCompareGraph(Type classType, GraphExportOption options)
@@ -124,7 +126,7 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         foreach (var function in byFunction)
         {
             var dataY = function
-                .Select(f => f.Times.CalculatePercentile(50).TotalNanoseconds)
+                .Select(f => f.Numbers.CalculatePercentile(i => i.MethodTime, 50).TotalNanoseconds)
                 .ToArray();
             var scatter = plot.AddScatter(dataX, dataY, label: $"{function.Key}", lineWidth: 2);
             if (options == GraphExportOption.IncludeErrorMarks)
@@ -135,7 +137,7 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
 
         plot.Legend();
         var fileName =
-            SubstituteComparisionFilenameTemplate(ComparisionFileNameTemplate, classType.Name);
+            SubstituteClassNameFilenameTemplate(ComparisonFileNameTemplate, classType.Name);
         plot.SaveFig(fileName);
         return this;
 
@@ -143,15 +145,15 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         {
             var dataDeltaMinus = function
                 .Select(f =>
-                    f.Times.CalculatePercentile(50).TotalNanoseconds -
-                    f.Times.CalculatePercentile(20).TotalNanoseconds)
+                    f.Numbers.CalculatePercentile(i => i.MethodTime, 50).TotalNanoseconds -
+                    f.Numbers.CalculatePercentile(i => i.MethodTime, 20).TotalNanoseconds)
                 .Select(f => f < 0 ? 0.0 : f)
                 .ToArray();
 
             var dataDeltaPlus = function
                 .Select(f =>
-                    f.Times.CalculatePercentile(80).TotalNanoseconds -
-                    f.Times.CalculatePercentile(50).TotalNanoseconds)
+                    f.Numbers.CalculatePercentile(i => i.MethodTime, 80).TotalNanoseconds -
+                    f.Numbers.CalculatePercentile(i => i.MethodTime, 50).TotalNanoseconds)
                 .Select(f => f < 0 ? 0.0 : f)
                 .ToArray();
 
@@ -180,8 +182,8 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         var className = rmExecutionResults.Method.ClassType.Name;
         var methodName = rmExecutionResults.Method.MethodInfo.Name;
         var parameter = rmExecutionResults.Method.Parameter;
-        var dataX = rmExecutionResults.Times.Select((_, index) => (double)(index + 1)).ToArray();
-        var dataY = rmExecutionResults.Times.Select(t => t.TotalNanoseconds).ToArray();
+        var dataX = rmExecutionResults.Numbers.Select((_, index) => (double)(index + 1)).ToArray();
+        var dataY = rmExecutionResults.Numbers.Select(t => t.MethodTime.TotalNanoseconds).ToArray();
         dataY = sortTimesDirection switch
         {
             AscendingTimes => dataY.OrderBy(t => t).ToArray(),
@@ -212,10 +214,5 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         return Path.Combine(ResultsFolder, fileName);
     }
 
-    private string SubstituteComparisionFilenameTemplate(string template, string className)
-    {
-        var fileName = template
-            .Replace("{className}", className, StringComparison.OrdinalIgnoreCase);
-        return Path.Combine(ResultsFolder, fileName);
-    }
+
 }

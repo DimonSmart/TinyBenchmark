@@ -4,4 +4,5 @@ public interface IResultProcessor
 {
     IGraphExporter WithGraphExporter();
     ICsvExporter WithCsvExporter();
+    ITableExporter WithTableExporter();
 }

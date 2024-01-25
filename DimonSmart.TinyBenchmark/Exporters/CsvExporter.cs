@@ -11,31 +11,21 @@ public class CsvExporter : ExporterBaseClass, ICsvExporter
         base(tinyBenchmarkRunner, data)
     {
     }
-
     public string CsvFileNameTemplate { get; set; } = "RAW-{ClassName}.csv";
+    private int _limit = int.MaxValue;
 
-    public ICsvExporter SaveAllRawResults(int limitLinesPerMethod = int.MaxValue)
+    public ICsvExporter LimitResultLines(int limit)
     {
-        var groupedResults =
-            Data.Results.SelectMany(result => result.Times,
-                    (result, time) =>
-                        new FlatMethodExecutionResult(
-                            result.Method.ClassType.Name,
-                            result.Method.MethodInfo.Name,
-                            result.Method.Parameter,
-                            time))
-                .GroupBy(g => g.ClassName);
-
-        foreach (var groupedResult in groupedResults)
-        {
-            WriteClassResults(groupedResult.Key, groupedResult, limitLinesPerMethod);
-        }
-
+        _limit = limit;
         return this;
     }
 
-    private void WriteClassResults(string className, IEnumerable<FlatMethodExecutionResult> groupedResult,
-        int limitLinesPerMethod)
+    public ICsvExporter SaveAllRawResults()
+    {
+        DoRawExportByClass();
+        return this;
+    }
+    public override void WriteClassResults(string className, IGrouping<string, FlatMethodExecutionResult> groupedResult)
     {
         var groupedByMethod = groupedResult
             .OrderBy(f => f.MethodName)
@@ -46,7 +36,7 @@ public class CsvExporter : ExporterBaseClass, ICsvExporter
 
         foreach (var methodGroup in groupedByMethod)
         {
-            limitedData.AddRange(methodGroup.ToList().LimitProportionally(limitLinesPerMethod));
+            limitedData.AddRange(methodGroup.ToList().LimitProportionally(_limit));
         }
 
         var fileName = SubstituteFilenameTemplate(CsvFileNameTemplate, className);

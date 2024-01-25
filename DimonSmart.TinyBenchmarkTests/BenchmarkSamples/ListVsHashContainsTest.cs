@@ -1,8 +1,8 @@
 ﻿using DimonSmart.TinyBenchmark.Attributes;
 
-namespace DimonSmart.TinyBenchmarkTests;
+namespace DimonSmart.TinyBenchmarkTests.BenchmarkSamples;
 
-public class ListVsHashContainsTest : VsTestsBase
+public class ListVsHashContainsTest : VsBenchmarkBase
 {
     private static readonly List<string>[] Strings;
     private static readonly HashSet<string>[] Hashes;

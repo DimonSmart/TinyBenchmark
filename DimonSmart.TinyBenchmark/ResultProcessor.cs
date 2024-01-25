@@ -7,7 +7,6 @@ public class ResultProcessor : IResultProcessor
     protected readonly BenchmarkData Data;
     protected readonly ITinyBenchmarkRunner TinyBenchmarkRunner;
 
-
     public ResultProcessor(ITinyBenchmarkRunner tinyBenchmarkRunner, BenchmarkData data)
     {
         TinyBenchmarkRunner = tinyBenchmarkRunner;
@@ -22,5 +21,10 @@ public class ResultProcessor : IResultProcessor
     public ICsvExporter WithCsvExporter()
     {
         return new CsvExporter(TinyBenchmarkRunner, Data);
+    }
+
+    public ITableExporter WithTableExporter()
+    {
+        return new TableExporter(TinyBenchmarkRunner, Data);
     }
 }

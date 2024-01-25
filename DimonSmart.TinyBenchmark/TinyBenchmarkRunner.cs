@@ -21,11 +21,11 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         var resultFolderPath = Path.Combine(Directory.GetCurrentDirectory(), ExporterBaseClass.ResultsFolder);
         var folderUri = new Uri(resultFolderPath).AbsoluteUri;
         Log($"Result folder:{folderUri}");
-        var methodExecutionInfos = GetMethodExecutionInfos();
-        var classesCount = methodExecutionInfos.Select(m => m.ClassType).Distinct().Count();
+        var methodExecutionInformation = GetMethodExecutionInformation();
+        var classesCount = methodExecutionInformation.Select(m => m.ClassType).Distinct().Count();
         Log($"Run TinyBenchmark for:{classesCount} classes");
-        var results = methodExecutionInfos
-            .ToDictionary(m => m, v => new List<TimeSpan>());
+        var results = methodExecutionInformation
+            .ToDictionary(m => m, v => new List<MethodExecutionNumbers>());
         long totalTicks = 0;
 
         if (_data.BenchmarkDurationLimit.HasValue)
@@ -40,7 +40,8 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
             }
 
             totalTicks = results.Values
-                .Select(t => (long)t.Select(i => i.Ticks).Average())
+                // TODO: Not only method but full execution time
+                .Select(t => (long)t.Select(i => i.MethodTime.Ticks).Average())
                 .Sum();
             Log($"One time full run time is:{TimeSpan.FromTicks(totalTicks).FormatTimeSpan()}");
         }
@@ -53,7 +54,7 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
             var executionCount = _data.MinFunctionExecutionCount;
             if (totalLimit.HasValue)
             {
-                var thisRunTicks = result.Value.CalculatePercentile(50).Ticks;
+                var thisRunTicks = result.Value.CalculatePercentile(r => r.MethodTime, 50).Ticks;
                 var ticksLimit = thisRunTicks * totalLimit.Value.Ticks / (double)totalTicks;
                 int? calculatedNumberOfExecutions =
                     (int)(ticksLimit * _data.BenchmarkDurationLimitInitIterations / totalTicks);
@@ -101,27 +102,7 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         return this;
     }
 
-    public ITinyBenchmarkRunner WinMinMaxFunctionExecutionCount(int minFunctionExecutionCount,
-        int? maxFunctionExecutionCount)
-    {
-        if (minFunctionExecutionCount < 1)
-        {
-            throw new ArgumentOutOfRangeException(nameof(minFunctionExecutionCount), minFunctionExecutionCount,
-                "Must be greater then 1");
-        }
-
-        if (minFunctionExecutionCount > maxFunctionExecutionCount)
-        {
-            throw new ArgumentOutOfRangeException(nameof(maxFunctionExecutionCount), maxFunctionExecutionCount,
-                $"Must be greater then {nameof(minFunctionExecutionCount)}");
-        }
-
-        _data.MinFunctionExecutionCount = minFunctionExecutionCount;
-        _data.MaxFunctionExecutionCount = maxFunctionExecutionCount;
-        return this;
-    }
-
-    private void LogCurrentMethod(MethodExecutionInfo method)
+    private void LogCurrentMethod(MethodExecutionInformation method)
     {
         Log($"{method.ClassType.Name}.{method.MethodInfo.Name}({method.Parameter})");
     }
@@ -131,9 +112,9 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         return new TinyBenchmarkRunner(writeMessage);
     }
 
-    private static IReadOnlyCollection<MethodExecutionInfo> GetMethodExecutionInfos()
+    private static IReadOnlyCollection<MethodExecutionInformation> GetMethodExecutionInformation()
     {
-        var executionInfos = new List<MethodExecutionInfo>();
+        var executionInformation = new List<MethodExecutionInformation>();
         var classes = GetClassesUnderTest();
         foreach (var classUnderTestType in classes)
         {
@@ -145,12 +126,13 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
 
             foreach (var method in methods)
             {
-                executionInfos.AddRange(GetMethodExecutionInfos(parameters, method, instance, classUnderTestType));
+                executionInformation.AddRange(GetMethodExecutionInformation(parameters, method, instance, classUnderTestType));
             }
         }
 
-        return executionInfos;
+        return executionInformation;
     }
+
 
     private static void PrepareRun()
     {
@@ -161,7 +143,7 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         GC.Collect();
     }
 
-    internal static TimeSpan MeasureExecutionTime(Action action)
+    internal static MethodExecutionNumbers MeasureExecutionTime(Action action)
     {
         //PrepareRun();
         // GC.TryStartNoGCRegion(100 * 1024 * 1024);
@@ -169,20 +151,22 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         action();
         stopwatch.Stop();
         // GC.EndNoGCRegion();
-        return stopwatch.Elapsed;
+        var elapsed = stopwatch.Elapsed;
+        // TODO: add GC time, mem etc if requested here
+        return new MethodExecutionNumbers(elapsed);
     }
 
-    internal static IEnumerable<MethodExecutionInfo> GetMethodExecutionInfos(
+    internal static IEnumerable<MethodExecutionInformation> GetMethodExecutionInformation(
         object[]? parameters, MethodInfo methodInfo, object instance, Type classType)
     {
-        var methodExecutionInfos = new List<MethodExecutionInfo>();
+        var methodExecutionInformation = new List<MethodExecutionInformation>();
         if (parameters != null)
         {
             foreach (var parameterAttributeValue in parameters)
             {
                 var methodExecutionInfo =
-                    new MethodExecutionInfo(classType, methodInfo, parameterAttributeValue, Action);
-                methodExecutionInfos.Add(methodExecutionInfo);
+                    new MethodExecutionInformation(classType, methodInfo, parameterAttributeValue, Action);
+                methodExecutionInformation.Add(methodExecutionInfo);
                 continue;
 
                 void Action()
@@ -193,16 +177,14 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         }
         else
         {
-            var methodExecutionInfo = new MethodExecutionInfo(classType, methodInfo, null, Action);
-            methodExecutionInfos.Add(methodExecutionInfo);
-
+            methodExecutionInformation.Add(new MethodExecutionInformation(classType, methodInfo, null, Action));
             void Action()
             {
                 methodInfo.Invoke(instance, null);
             }
         }
 
-        return methodExecutionInfos;
+        return methodExecutionInformation;
     }
 
     public TinyBenchmarkRunner WithoutRunExecutionTimeLimit()
@@ -214,5 +196,29 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
     private void Log(string message)
     {
         _writeMessage?.Invoke(message);
+    }
+                               
+    public ITinyBenchmarkRunner WithMinFunctionExecutionCount(int minFunctionExecutionCount)
+    {
+        if (minFunctionExecutionCount < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(minFunctionExecutionCount), minFunctionExecutionCount,
+                "Must be greater then 1");
+        }
+
+        _data.MinFunctionExecutionCount = minFunctionExecutionCount;
+        return this;
+    }
+
+    public ITinyBenchmarkRunner WithMaxFunctionExecutionCount(int maxFunctionExecutionCount)
+    {
+        if (_data.MinFunctionExecutionCount > maxFunctionExecutionCount)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maxFunctionExecutionCount), maxFunctionExecutionCount,
+                $"Must be greater then {nameof(_data.MinFunctionExecutionCount)}");
+        }
+
+        _data.MaxFunctionExecutionCount = maxFunctionExecutionCount;
+        return this;
     }
 }

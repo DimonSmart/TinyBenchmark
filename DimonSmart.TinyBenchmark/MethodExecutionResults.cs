@@ -1,3 +1,3 @@
 ﻿namespace DimonSmart.TinyBenchmark;
 
-public record MethodExecutionResults(MethodExecutionInfo Method, IList<TimeSpan> Times);
+public record MethodExecutionResults(MethodExecutionInformation Method, IList<MethodExecutionNumbers> Numbers);
