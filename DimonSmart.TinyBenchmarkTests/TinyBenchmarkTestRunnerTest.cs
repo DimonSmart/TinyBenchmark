@@ -1,4 +1,5 @@
 ﻿using DimonSmart.TinyBenchmark;
+using DimonSmart.TinyBenchmark.Attributes;
 using Xunit;
 using Xunit.Abstractions;
 using static DimonSmart.TinyBenchmark.Exporters.IGraphExporter.GraphExportOption;
@@ -6,6 +7,7 @@ using static DimonSmart.TinyBenchmark.SortTimeDirection;
 
 namespace DimonSmart.TinyBenchmarkTests;
 
+[TinyBenchmarkOnlyThisClass]
 public class TinyBenchmarkTestRunnerTest
 {
     private readonly ITestOutputHelper _output;
@@ -20,11 +22,15 @@ public class TinyBenchmarkTestRunnerTest
     {
         TinyBenchmarkRunner
             .Create(_output.WriteLine)
-            .WithMaxRunExecutionTime(TimeSpan.FromSeconds(180))
-            .WinMinMaxFunctionExecutionCount(1000, 100000)
+            .WithMaxRunExecutionTime(TimeSpan.FromSeconds(10))
+            .WithMinFunctionExecutionCount(1000)
+            .WithMaxFunctionExecutionCount(1000000)
             .Run()
             .WithCsvExporter()
-            .SaveAllRawResults(50)
+                .LimitResultLines(50)
+                .SaveAllRawResults()
+            .WithTableExporter()
+                .SaveAllTablesResults()
             .WithGraphExporter()
             .ExportAllRawGraph(AscendingTimes)
             .ExportAllRawGraph()

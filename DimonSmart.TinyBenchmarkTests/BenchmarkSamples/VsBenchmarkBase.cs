@@ -1,6 +1,6 @@
-﻿namespace DimonSmart.TinyBenchmarkTests;
+﻿namespace DimonSmart.TinyBenchmarkTests.BenchmarkSamples;
 
-public class VsTestsBase
+public class VsBenchmarkBase
 {
     protected static readonly string[] AllNames =
     {

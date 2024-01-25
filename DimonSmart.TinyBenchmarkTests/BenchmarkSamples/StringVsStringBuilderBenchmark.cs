@@ -1,18 +1,18 @@
 ﻿using System.Text;
 using DimonSmart.TinyBenchmark.Attributes;
 
-namespace DimonSmart.TinyBenchmarkTests;
+namespace DimonSmart.TinyBenchmarkTests.BenchmarkSamples;
 
-public class StringConcatenationTest : VsTestsBase
+public class StringVsStringBuilderBenchmark : VsBenchmarkBase
 {
-    [TinyBenchmarkRangeParameter(1, 60, 5)]
+    [TinyBenchmarkRangeParameter(1, 25)]
     public int BenchmarkParameter { get; set; }
 
     [TinyBenchmark]
     public void StringPlus(int parameter)
     {
         var s = string.Empty;
-        for (var i = 0; i < parameter; i++) s = s + AllNames[i];
+        for (var i = 0; i < parameter; i++) s += AllNames[i];
     }
 
     [TinyBenchmark]

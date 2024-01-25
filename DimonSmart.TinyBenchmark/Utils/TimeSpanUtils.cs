@@ -20,6 +20,11 @@ public static class TimeSpanUtils
         return sortedList[index];
     }
 
+    public static TimeSpan CalculatePercentile<TSource>(this IEnumerable<TSource> source, Func<TSource, TimeSpan> selector, double percentile)
+    {
+        return source.Select(selector).CalculatePercentile(percentile);
+    }
+
     public static TimeSpan BestResult(IEnumerable<TimeSpan> times)
     {
         return times.Min();
