@@ -41,7 +41,7 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
 
             totalTicks = results.Values
                 // TODO: Not only method but full execution time
-                .Select(t => (long)t.Select(i => i.MethodTime.Ticks).Average())
+                .Select(t => (long)t.Select(i => i.PureMethodTime.Ticks).Average())
                 .Sum();
             Log($"One time full run time is:{TimeSpan.FromTicks(totalTicks).FormatTimeSpan()}");
         }
@@ -54,7 +54,7 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
             var executionCount = _data.MinFunctionExecutionCount;
             if (totalLimit.HasValue)
             {
-                var thisRunTicks = result.Value.CalculatePercentile(r => r.MethodTime, 50).Ticks;
+                var thisRunTicks = result.Value.CalculatePercentile(r => r.PureMethodTime, 50).Ticks;
                 var ticksLimit = thisRunTicks * totalLimit.Value.Ticks / (double)totalTicks;
                 int? calculatedNumberOfExecutions =
                     (int)(ticksLimit * _data.BenchmarkDurationLimitInitIterations / totalTicks);
@@ -145,15 +145,16 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
 
     internal static MethodExecutionNumbers MeasureExecutionTime(Action action)
     {
+        var methodMeasureStopwatch = Stopwatch.StartNew();
         //PrepareRun();
         // GC.TryStartNoGCRegion(100 * 1024 * 1024);
-        var stopwatch = Stopwatch.StartNew();
+        var methodStopwatch = Stopwatch.StartNew();
         action();
-        stopwatch.Stop();
+        methodStopwatch.Stop();
+        methodMeasureStopwatch.Stop();
         // GC.EndNoGCRegion();
-        var elapsed = stopwatch.Elapsed;
         // TODO: add GC time, mem etc if requested here
-        return new MethodExecutionNumbers(elapsed);
+        return new MethodExecutionNumbers(methodStopwatch.Elapsed, methodMeasureStopwatch.Elapsed);
     }
 
     internal static IEnumerable<MethodExecutionInformation> GetMethodExecutionInformation(
@@ -197,7 +198,7 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
     {
         _writeMessage?.Invoke(message);
     }
-                               
+
     public ITinyBenchmarkRunner WithMinFunctionExecutionCount(int minFunctionExecutionCount)
     {
         if (minFunctionExecutionCount < 1)

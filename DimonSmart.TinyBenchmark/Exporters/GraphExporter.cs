@@ -126,7 +126,7 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         foreach (var function in byFunction)
         {
             var dataY = function
-                .Select(f => f.Numbers.CalculatePercentile(i => i.MethodTime, 50).TotalNanoseconds)
+                .Select(f => f.Numbers.CalculatePercentile(i => i.PureMethodTime, 50).TotalNanoseconds)
                 .ToArray();
             var scatter = plot.AddScatter(dataX, dataY, label: $"{function.Key}", lineWidth: 2);
             if (options == GraphExportOption.IncludeErrorMarks)
@@ -145,15 +145,15 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         {
             var dataDeltaMinus = function
                 .Select(f =>
-                    f.Numbers.CalculatePercentile(i => i.MethodTime, 50).TotalNanoseconds -
-                    f.Numbers.CalculatePercentile(i => i.MethodTime, 20).TotalNanoseconds)
+                    f.Numbers.CalculatePercentile(i => i.PureMethodTime, 50).TotalNanoseconds -
+                    f.Numbers.CalculatePercentile(i => i.PureMethodTime, 20).TotalNanoseconds)
                 .Select(f => f < 0 ? 0.0 : f)
                 .ToArray();
 
             var dataDeltaPlus = function
                 .Select(f =>
-                    f.Numbers.CalculatePercentile(i => i.MethodTime, 80).TotalNanoseconds -
-                    f.Numbers.CalculatePercentile(i => i.MethodTime, 50).TotalNanoseconds)
+                    f.Numbers.CalculatePercentile(i => i.PureMethodTime, 80).TotalNanoseconds -
+                    f.Numbers.CalculatePercentile(i => i.PureMethodTime, 50).TotalNanoseconds)
                 .Select(f => f < 0 ? 0.0 : f)
                 .ToArray();
 
@@ -183,7 +183,7 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         var methodName = rmExecutionResults.Method.MethodInfo.Name;
         var parameter = rmExecutionResults.Method.Parameter;
         var dataX = rmExecutionResults.Numbers.Select((_, index) => (double)(index + 1)).ToArray();
-        var dataY = rmExecutionResults.Numbers.Select(t => t.MethodTime.TotalNanoseconds).ToArray();
+        var dataY = rmExecutionResults.Numbers.Select(t => t.PureMethodTime.TotalNanoseconds).ToArray();
         dataY = sortTimesDirection switch
         {
             AscendingTimes => dataY.OrderBy(t => t).ToArray(),
