@@ -49,7 +49,7 @@ public class TableExporter : ExporterBaseClass, ITableExporter
         {
             var oneRow = new List<object>() { function.Key };
             var results = function
-                .Select(f => f.Numbers.Select(n => n.MethodTime).CalculatePercentile(50).TotalNanoseconds)
+                .Select(f => f.Numbers.Select(n => n.PureMethodTime).CalculatePercentile(50).TotalNanoseconds)
                 // Add formatting here
                 .Select(f => (object)f);
             oneRow.AddRange(results);

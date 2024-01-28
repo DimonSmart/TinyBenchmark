@@ -48,7 +48,7 @@ public class ExporterBaseClass : ResultProcessor
                                result.Method.ClassType.Name,
                                result.Method.MethodInfo.Name,
                                result.Method.Parameter,
-                               numbers.MethodTime))
+                               numbers.PureMethodTime))
                    .GroupBy(g => g.ClassName);
 
         foreach (var groupedResult in groupedResults)
