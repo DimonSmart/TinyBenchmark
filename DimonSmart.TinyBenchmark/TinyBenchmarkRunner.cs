@@ -31,7 +31,7 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         Log("1. Warming UP phase (time pre-calculation)");
         long measuredTotalTime = 0;
         if (_data.BenchmarkDurationLimit.HasValue)
-        { 
+        {
             WarmUpCalculation(results);
             measuredTotalTime = results.Sum(kvp => kvp.Value.CalculatePercentile(i => i.MethodMeasureTime, 50).Ticks);
         }
@@ -44,19 +44,22 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
             Log(GetUserFriendlyMethodName(method));
 
             var methodTimeLimit = TimeSpan.Zero;
-           
+
             if (_data.BenchmarkDurationLimit.HasValue)
             {
                 var currentMethodTime = results[method].CalculatePercentile(i => i.MethodMeasureTime, 50).Ticks;
-                var methodTimeLimitTicks = (long)(_data.BenchmarkDurationLimit!.Value.Ticks * currentMethodTime * 100.0 / measuredTotalTime / 100.0);
+                var methodTimeLimitTicks = (long)(_data.BenchmarkDurationLimit!.Value.Ticks * currentMethodTime *
+                    100.0 / measuredTotalTime / 100.0);
                 methodTimeLimit = TimeSpan.FromTicks(methodTimeLimitTicks);
             }
 
-            var (timeLimitReached, measureTime) = MeasureFunctionCycle(method, results, methodTimeLimit, _data.MinFunctionExecutionCount, _data.BenchmarkDurationLimit);
+            var (timeLimitReached, measureTime) = MeasureFunctionCycle(method, results, methodTimeLimit,
+                _data.MinFunctionExecutionCount, _data.BenchmarkDurationLimit);
 
             if (timeLimitReached)
             {
-                if (!overtimeExecutions.TryGetValue(method.ClassType, out var value) || value.ExecutionTime < measureTime)
+                if (!overtimeExecutions.TryGetValue(method.ClassType, out var value) ||
+                    value.ExecutionTime < measureTime)
                 {
                     value = (method, measureTime);
                     overtimeExecutions[method.ClassType] = value;
@@ -73,7 +76,39 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         return new ResultProcessor(this, _data);
     }
 
-    private void LogOvertimeExecutions(Dictionary<Type, (MethodExecutionInformation Method, TimeSpan ExecutionTime)> overtimeExecutions)
+    public ITinyBenchmarkRunner WithMaxRunExecutionTime(TimeSpan time, int preRunCount)
+    {
+        _data.BenchmarkDurationLimit = time;
+        _data.BenchmarkDurationLimitInitIterations = preRunCount;
+        return this;
+    }
+
+    public ITinyBenchmarkRunner WithMinFunctionExecutionCount(int minFunctionExecutionCount)
+    {
+        if (minFunctionExecutionCount < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(minFunctionExecutionCount), minFunctionExecutionCount,
+                "Must be greater then 1");
+        }
+
+        _data.MinFunctionExecutionCount = minFunctionExecutionCount;
+        return this;
+    }
+
+    public ITinyBenchmarkRunner WithMaxFunctionExecutionCount(int maxFunctionExecutionCount)
+    {
+        if (_data.MinFunctionExecutionCount > maxFunctionExecutionCount)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maxFunctionExecutionCount), maxFunctionExecutionCount,
+                $"Must be greater then {nameof(_data.MinFunctionExecutionCount)}");
+        }
+
+        _data.MaxFunctionExecutionCount = maxFunctionExecutionCount;
+        return this;
+    }
+
+    private void LogOvertimeExecutions(
+        Dictionary<Type, (MethodExecutionInformation Method, TimeSpan ExecutionTime)> overtimeExecutions)
     {
         if (!overtimeExecutions.Any())
         {
@@ -132,15 +167,9 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         foreach (var result in results)
         {
             var (_, _) =
-                MeasureFunctionCycle(result.Key, results, TimeSpan.Zero, _data.MinFunctionExecutionCount, TimeSpan.MaxValue);
+                MeasureFunctionCycle(result.Key, results, TimeSpan.Zero, _data.MinFunctionExecutionCount,
+                    TimeSpan.MaxValue);
         }
-    }
-
-    public ITinyBenchmarkRunner WithMaxRunExecutionTime(TimeSpan time, int preRunCount)
-    {
-        _data.BenchmarkDurationLimit = time;
-        _data.BenchmarkDurationLimitInitIterations = preRunCount;
-        return this;
     }
 
     public static ITinyBenchmarkRunner Create(Action<string>? writeMessage = null)
@@ -162,7 +191,8 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
 
             foreach (var method in methods)
             {
-                executionInformation.AddRange(GetMethodExecutionInformation(parameters, method, instance, classUnderTestType, _data.BatchSize));
+                executionInformation.AddRange(GetMethodExecutionInformation(parameters, method, instance,
+                    classUnderTestType, _data.BatchSize));
             }
         }
 
@@ -207,17 +237,15 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
                 continue;
 
                 void Action()
-                { 
-                    for (var i = 0; i < batchSize; i++)
-                    {
-                        methodInfo.Invoke(instance, new[] { parameterAttributeValue });
-                    }
+                {
+                    for (var i = 0; i < batchSize; i++) methodInfo.Invoke(instance, new[] { parameterAttributeValue });
                 }
             }
         }
         else
         {
             methodExecutionInformation.Add(new MethodExecutionInformation(classType, methodInfo, null, Action));
+
             void Action()
             {
                 methodInfo.Invoke(instance, null);
@@ -236,29 +264,5 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
     private void Log(string message)
     {
         _writeMessage?.Invoke(message);
-    }
-
-    public ITinyBenchmarkRunner WithMinFunctionExecutionCount(int minFunctionExecutionCount)
-    {
-        if (minFunctionExecutionCount < 1)
-        {
-            throw new ArgumentOutOfRangeException(nameof(minFunctionExecutionCount), minFunctionExecutionCount,
-                "Must be greater then 1");
-        }
-
-        _data.MinFunctionExecutionCount = minFunctionExecutionCount;
-        return this;
-    }
-
-    public ITinyBenchmarkRunner WithMaxFunctionExecutionCount(int maxFunctionExecutionCount)
-    {
-        if (_data.MinFunctionExecutionCount > maxFunctionExecutionCount)
-        {
-            throw new ArgumentOutOfRangeException(nameof(maxFunctionExecutionCount), maxFunctionExecutionCount,
-                $"Must be greater then {nameof(_data.MinFunctionExecutionCount)}");
-        }
-
-        _data.MaxFunctionExecutionCount = maxFunctionExecutionCount;
-        return this;
     }
 }
