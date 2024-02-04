@@ -1,5 +1,7 @@
 ﻿using DimonSmart.TinyBenchmark.Exporters;
 
+namespace DimonSmart.TinyBenchmark;
+
 public interface ITinyBenchmarkRunner
 {
     /// <summary>
@@ -35,5 +37,5 @@ public interface ITinyBenchmarkRunner
     /// Executes the benchmark and returns the results.
     /// </summary>
     /// <returns>An IResultProcessor containing the benchmark results.</returns>
-    IResultProcessor Run();
+    IResultProcessor Run(params Type[] types);
 }

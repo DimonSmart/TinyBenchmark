@@ -26,13 +26,14 @@ public class BenchmarkData
     /// </summary>
     public int? MaxFunctionExecutionCount { get; internal set; } = 10000;
 
-    // /// <summary>
-    // /// Gets or sets the method for obtaining the benchmark result from a collection of execution times.
-    // /// </summary>
-    // public Func<IEnumerable<TimeSpan>, TimeSpan> GetResult { get; internal set; } = TimeSpanUtils.Percentile50;
-
     /// <summary>
     /// Gets the results of method execution.
     /// </summary>
     public IList<MethodExecutionResults> Results { get; internal set; } = new List<MethodExecutionResults>();
+
+    /// <summary>
+    /// Some methods execute very quickly, resulting in time measurements that are consistently close to zero.
+    /// To obtain more discernible results, this property allows measuring a batch of executions at once.
+    /// </summary>
+    public int BatchSize { get; set; } = 5;
 }

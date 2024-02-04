@@ -22,9 +22,9 @@ public class TinyBenchmarkTestRunnerTest
     {
         TinyBenchmarkRunner
             .Create(_output.WriteLine)
-            .WithMaxRunExecutionTime(TimeSpan.FromSeconds(10))
-            .WithMinFunctionExecutionCount(1000)
-            .WithMaxFunctionExecutionCount(1000000)
+            .WithMaxRunExecutionTime(TimeSpan.FromSeconds(30), 100)
+            .WithMinFunctionExecutionCount(500)
+            .WithMaxFunctionExecutionCount(10000)
             .Run()
             .WithCsvExporter()
                 .LimitResultLines(50)
