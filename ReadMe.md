@@ -51,11 +51,13 @@ public class TinyBenchmarkTestRunnerTest
     public void RunAllBenchmarks()
     {
         TinyBenchmarkRunner
-            .Create(_output.WriteLine)
-            .WithMaxRunExecutionTime(TimeSpan.FromSeconds(10))
-            .WithMinFunctionExecutionCount(1000)
-            .WithMaxFunctionExecutionCount(1000000)
-            .Run()
+            .Create()
+            .WithLogger(_output.WriteLine)
+            .WithMaxRunExecutionTime(TimeSpan.FromSeconds(30), 100)
+            .WithMinFunctionExecutionCount(100)
+            .WithMaxFunctionExecutionCount(10000)
+            .WithResultSubfolders(true)
+            .Run(typeof(ExampleClassTest))
             .WithCsvExporter()
                 .LimitResultLines(50)
                 .SaveAllRawResults()
@@ -63,7 +65,6 @@ public class TinyBenchmarkTestRunnerTest
                 .SaveAllTablesResults()
             .WithGraphExporter()
                 .ExportAllRawGraph(AscendingTimes)
-                .ExportAllRawGraph()
                 .ExportAllFunctionsCompareGraph(IncludeErrorMarks);
     }
 }
