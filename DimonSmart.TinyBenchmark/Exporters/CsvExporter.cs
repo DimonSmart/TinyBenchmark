@@ -39,20 +39,12 @@ public class CsvExporter : ExporterBaseClass, ICsvExporter
             limitedData.AddRange(methodGroup.ToList().LimitProportionally(_limit));
         }
 
-        var fileName = SubstituteFilenameTemplate(CsvFileNameTemplate, className);
+        var fileName = CreateResultFolderPathAndFileName(CsvFileNameTemplate, className);
         using var stream = new FileStream(fileName, FileMode.Create);
         using var bufferedStream = new BufferedStream(stream, 1024 * 1024);
         using var writer = new StreamWriter(bufferedStream);
         using var csv = new CsvWriter(writer, new CsvConfiguration(CultureInfo.InvariantCulture));
         csv.Context.RegisterClassMap<FlatMethodExecutionResultMap>();
-
         csv.WriteRecords(limitedData);
-    }
-
-    private static string SubstituteFilenameTemplate(string template, string className)
-    {
-        var fileName = template
-            .Replace("{className}", className, StringComparison.OrdinalIgnoreCase);
-        return Path.Combine(ResultsFolder, fileName);
     }
 }

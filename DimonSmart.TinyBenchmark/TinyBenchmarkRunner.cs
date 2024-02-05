@@ -17,6 +17,12 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         return this;
     }
 
+    public ITinyBenchmarkRunner WithResultSubfolders(bool resultSubfolders)
+    {
+        _data.ResultSubfolders = resultSubfolders;
+        return this;
+    }
+
     public IResultProcessor Run(params Type[] types)
     {
         var resultFolderPath = Path.Combine(Directory.GetCurrentDirectory(), ExporterBaseClass.ResultsFolder);

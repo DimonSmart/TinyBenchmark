@@ -1,9 +1,5 @@
-﻿using System.Globalization;
-using ConsoleTableExt;
-using CsvHelper;
-using CsvHelper.Configuration;
+﻿using ConsoleTableExt;
 using DimonSmart.TinyBenchmark.Utils;
-using static DimonSmart.TinyBenchmark.Exporters.IGraphExporter;
 
 namespace DimonSmart.TinyBenchmark.Exporters;
 
@@ -67,7 +63,7 @@ public class TableExporter : ExporterBaseClass, ITableExporter
         .WithFormat(ConsoleTableBuilderFormat.Default)
         .Export();
 
-        var fileName = SubstituteClassNameFilenameTemplate(TableFileNameTemplate, classType.Name);
+        var fileName = CreateResultFolderPathAndFileName(TableFileNameTemplate, classType.Name);
         File.WriteAllText(fileName, table.ToString());
     }
 
@@ -82,12 +78,8 @@ public class TableExporter : ExporterBaseClass, ITableExporter
         {
             var methodName = methodGroup.Key;
             var parameters = methodGroup.GroupBy(g => g.Parameter).OrderBy(g => g.Key);
-
-
-
         }
 
         var fileName = SubstituteFilenameTemplate(TableFileNameTemplate, className);
-
     }
 }

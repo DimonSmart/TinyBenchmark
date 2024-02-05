@@ -136,8 +136,7 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         }
 
         plot.Legend();
-        var fileName =
-            SubstituteClassNameFilenameTemplate(ComparisonFileNameTemplate, classType.Name);
+        var fileName = CreateResultFolderPathAndFileName(ComparisonFileNameTemplate, classType.Name);
         plot.SaveFig(fileName);
         return this;
 
@@ -211,8 +210,7 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
             .Replace("{className}", className, StringComparison.OrdinalIgnoreCase)
             .Replace("{parameter}", parameter?.ToString() ?? string.Empty, StringComparison.OrdinalIgnoreCase)
             .Replace("{sorted}", sorted.ToString(), StringComparison.OrdinalIgnoreCase);
-        return Path.Combine(ResultsFolder, fileName);
+
+        return CreateResultFolderPathAndFileName(fileName, className, "RawGraphs");
     }
-
-
 }

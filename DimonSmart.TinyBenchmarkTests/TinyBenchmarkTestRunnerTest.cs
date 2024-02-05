@@ -18,7 +18,6 @@ public class TinyBenchmarkTestRunnerTest
         _output = output;
     }
 
-
     /// <summary>
     /// Full run
     /// </summary>
@@ -29,8 +28,9 @@ public class TinyBenchmarkTestRunnerTest
             .Create()
             .WithLogger(_output.WriteLine)
             .WithMaxRunExecutionTime(TimeSpan.FromSeconds(30), 100)
-            .WithMinFunctionExecutionCount(50)
-            .WithMaxFunctionExecutionCount(1000)
+            .WithMinFunctionExecutionCount(100)
+            .WithMaxFunctionExecutionCount(10000)
+            .WithResultSubfolders(true)
             .Run(typeof(StringVsStringBuilderBenchmark))
             .WithCsvExporter()
                 .LimitResultLines(50)
@@ -38,8 +38,7 @@ public class TinyBenchmarkTestRunnerTest
             .WithTableExporter()
                 .SaveAllTablesResults()
             .WithGraphExporter()
-            .ExportAllRawGraph(AscendingTimes)
-            .ExportAllRawGraph()
-            .ExportAllFunctionsCompareGraph(IncludeErrorMarks);
+                .ExportAllRawGraph(AscendingTimes)
+                .ExportAllFunctionsCompareGraph(IncludeErrorMarks);
     }
 }
