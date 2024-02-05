@@ -5,7 +5,7 @@ namespace DimonSmart.TinyBenchmarkTests.BenchmarkSamples;
 
 public class StringVsStringBuilderBenchmark : VsBenchmarkBase
 {
-    [TinyBenchmarkRangeParameter(1, 25)]
+    [TinyBenchmarkRangeParameter(1, 32)]
     public int BenchmarkParameter { get; set; }
 
     [TinyBenchmark]
@@ -20,6 +20,6 @@ public class StringVsStringBuilderBenchmark : VsBenchmarkBase
     {
         var sb = new StringBuilder();
         for (var i = 0; i < parameter; i++) sb.Append(AllNames[i]);
-        var s = sb.ToString();
+        var _ = sb.ToString();
     }
 }

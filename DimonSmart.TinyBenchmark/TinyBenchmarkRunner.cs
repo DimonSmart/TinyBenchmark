@@ -9,11 +9,12 @@ namespace DimonSmart.TinyBenchmark;
 public class TinyBenchmarkRunner : ITinyBenchmarkRunner
 {
     private readonly BenchmarkData _data = new();
-    private readonly Action<string>? _writeMessage;
+    private Action<string>? _writeMessage;
 
-    private TinyBenchmarkRunner(Action<string>? writeMessage)
+    public ITinyBenchmarkRunner WithLogger(Action<string> writeMessage)
     {
         _writeMessage = writeMessage;
+        return this;
     }
 
     public IResultProcessor Run(params Type[] types)
@@ -21,7 +22,7 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         var resultFolderPath = Path.Combine(Directory.GetCurrentDirectory(), ExporterBaseClass.ResultsFolder);
         var folderUri = new Uri(resultFolderPath).AbsoluteUri;
         Log($"Result folder:{folderUri}");
-        var methods = GetMethodExecutionInformation();
+        var methods = GetMethodExecutionInformation(types);
         var classesCount = methods.Select(m => m.ClassType).Distinct().Count();
         Log($"Run TinyBenchmark for:{classesCount} classes");
         var results = methods.ToDictionary(m => m, _ => new List<MethodExecutionNumbers>(1000000));
@@ -48,13 +49,12 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
             if (_data.BenchmarkDurationLimit.HasValue)
             {
                 var currentMethodTime = results[method].CalculatePercentile(i => i.MethodMeasureTime, 50).Ticks;
-                var methodTimeLimitTicks = (long)(_data.BenchmarkDurationLimit!.Value.Ticks * currentMethodTime *
-                    100.0 / measuredTotalTime / 100.0);
+                var methodTimeLimitTicks = (long)((double)_data.BenchmarkDurationLimit.Value.Ticks * currentMethodTime / measuredTotalTime);
                 methodTimeLimit = TimeSpan.FromTicks(methodTimeLimitTicks);
             }
 
             var (timeLimitReached, measureTime) = MeasureFunctionCycle(method, results, methodTimeLimit,
-                _data.MinFunctionExecutionCount, _data.BenchmarkDurationLimit);
+                _data.MinFunctionExecutionCount, _data.MaxFunctionExecutionCount, _data.BenchmarkDurationLimit);
 
             if (timeLimitReached)
             {
@@ -124,11 +124,11 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         Log("Please increase MaxRunExecutionTime parameter or decrease MinFunctionExecutionCount");
     }
 
-    private static (bool TimeLimitReached, TimeSpan measureTime) MeasureFunctionCycle(
-        MethodExecutionInformation method,
+    private static (bool TimeLimitReached, TimeSpan measureTime) MeasureFunctionCycle(MethodExecutionInformation method,
         IReadOnlyDictionary<MethodExecutionInformation, List<MethodExecutionNumbers>> results,
         TimeSpan methodTimeLimit,
         int minFunctionExecutionCount,
+        int? maxFunctionExecutionCount,
         TimeSpan? timeLimit)
     {
         var iteration = 0;
@@ -142,7 +142,7 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
 
             if (iteration >= minFunctionExecutionCount)
             {
-                if (!timeLimit.HasValue || stopwatch.Elapsed > methodTimeLimit)
+                if (!timeLimit.HasValue || stopwatch.Elapsed > methodTimeLimit || iteration >= maxFunctionExecutionCount)
                 {
                     break;
                 }
@@ -167,20 +167,20 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         foreach (var result in results)
         {
             var (_, _) =
-                MeasureFunctionCycle(result.Key, results, TimeSpan.Zero, _data.MinFunctionExecutionCount,
+                MeasureFunctionCycle(result.Key, results, TimeSpan.Zero, _data.MinFunctionExecutionCount, null,
                     TimeSpan.MaxValue);
         }
     }
 
-    public static ITinyBenchmarkRunner Create(Action<string>? writeMessage = null)
+    public static ITinyBenchmarkRunner Create()
     {
-        return new TinyBenchmarkRunner(writeMessage);
+        return new TinyBenchmarkRunner();
     }
 
-    private IReadOnlyCollection<MethodExecutionInformation> GetMethodExecutionInformation()
+    private IReadOnlyCollection<MethodExecutionInformation> GetMethodExecutionInformation(IReadOnlyCollection<Type> types)
     {
         var executionInformation = new List<MethodExecutionInformation>();
-        var classes = GetClassesUnderTest();
+        var classes = types.Any() ? types : GetClassesUnderTest();
         foreach (var classUnderTestType in classes)
         {
             var propertyInfo = FindClassUnderTestParameterProperty(classUnderTestType);

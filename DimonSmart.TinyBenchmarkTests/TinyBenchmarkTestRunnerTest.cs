@@ -1,5 +1,6 @@
 ﻿using DimonSmart.TinyBenchmark;
 using DimonSmart.TinyBenchmark.Attributes;
+using DimonSmart.TinyBenchmarkTests.BenchmarkSamples;
 using Xunit;
 using Xunit.Abstractions;
 using static DimonSmart.TinyBenchmark.Exporters.IGraphExporter.GraphExportOption;
@@ -17,15 +18,20 @@ public class TinyBenchmarkTestRunnerTest
         _output = output;
     }
 
+
+    /// <summary>
+    /// Full run
+    /// </summary>
     [Fact]
-    public void RunAllBenchmarks()
+    public void StringVsStringBuilderBenchmark()
     {
         TinyBenchmarkRunner
-            .Create(_output.WriteLine)
+            .Create()
+            .WithLogger(_output.WriteLine)
             .WithMaxRunExecutionTime(TimeSpan.FromSeconds(30), 100)
-            .WithMinFunctionExecutionCount(500)
-            .WithMaxFunctionExecutionCount(10000)
-            .Run()
+            .WithMinFunctionExecutionCount(50)
+            .WithMaxFunctionExecutionCount(1000)
+            .Run(typeof(StringVsStringBuilderBenchmark))
             .WithCsvExporter()
                 .LimitResultLines(50)
                 .SaveAllRawResults()
