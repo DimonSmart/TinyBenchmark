@@ -34,6 +34,13 @@ public interface ITinyBenchmarkRunner
     ITinyBenchmarkRunner WithMaxFunctionExecutionCount(int max);
 
     /// <summary>
+    /// Configures the benchmark runner to use a custom logger.
+    /// </summary>
+    /// <param name="writeMessage">An Action delegate that takes a string message. This delegate is used for logging purposes.</param>
+    /// <returns>An instance of ITinyBenchmarkRunner configured with the specified logger, for method chaining.</returns>
+    ITinyBenchmarkRunner WithLogger(Action<string> writeMessage);
+
+    /// <summary>
     /// Executes the benchmark and returns the results.
     /// </summary>
     /// <returns>An IResultProcessor containing the benchmark results.</returns>
