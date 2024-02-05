@@ -41,6 +41,19 @@ public interface ITinyBenchmarkRunner
     ITinyBenchmarkRunner WithLogger(Action<string> writeMessage);
 
     /// <summary>
+    /// Configures the benchmark runner to optionally use subfolders for storing results.
+    /// When enabled, results are organized into subfolders named after the test classes.
+    /// </summary>
+    /// <param name="resultSubfolders">
+    /// A boolean value indicating whether to use subfolders. 
+    /// If true, results are stored in subfolders named by test class names. 
+    /// If false, all results are stored in the main folder. 
+    /// Default is true.
+    /// </param>
+    /// <returns>An instance of ITinyBenchmarkRunner configured with the specified result organization preference.</returns>
+    ITinyBenchmarkRunner WithResultSubfolders(bool resultSubfolders = true);
+
+    /// <summary>
     /// Executes the benchmark and returns the results.
     /// </summary>
     /// <returns>An IResultProcessor containing the benchmark results.</returns>

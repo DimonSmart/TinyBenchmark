@@ -3,25 +3,12 @@
 public class ExporterBaseClass : ResultProcessor
 {
     public const string ResultsFolder = "TinyBenchmark";
-    private bool _directoryCreated;
+    private readonly HashSet<string> _createdDirectories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
     public ExporterBaseClass(ITinyBenchmarkRunner tinyBenchmarkRunner, BenchmarkData data) :
         base(tinyBenchmarkRunner, data)
     {
-        BeforeExport();
     }
-
-    protected void BeforeExport()
-    {
-        if (_directoryCreated)
-        {
-            return;
-        }
-
-        Directory.CreateDirectory(ResultsFolder);
-        _directoryCreated = true;
-    }
-
 
     protected void DoExportByClass(object? options = null)
     {
@@ -56,15 +43,27 @@ public class ExporterBaseClass : ResultProcessor
             WriteClassResults(groupedResult.Key, groupedResult);
         }
     }
+
     public virtual void WriteClassResults(string key, IGrouping<string, FlatMethodExecutionResult> groupedResult)
     {
         throw new NotImplementedException();
     }
 
-    protected string SubstituteClassNameFilenameTemplate(string template, string className)
+    protected string CreateResultFolderPathAndFileName(string template, string className, string? subSubFolder = null)
     {
-        var fileName = template
-            .Replace("{className}", className, StringComparison.OrdinalIgnoreCase);
-        return Path.Combine(ResultsFolder, fileName);
+        var fileName = template.Replace("{className}", className, StringComparison.OrdinalIgnoreCase);
+        var resultFolder = Data.ResultSubfolders ? Path.Combine(ResultsFolder, className) : ResultsFolder;
+        if (!string.IsNullOrWhiteSpace(subSubFolder))
+        {
+            resultFolder = Path.Combine(resultFolder, subSubFolder);
+        }
+
+        if (!_createdDirectories.Contains(resultFolder))
+        {
+            Directory.CreateDirectory(resultFolder);
+            _createdDirectories.Add(resultFolder);
+        }
+
+        return Path.Combine(resultFolder, fileName);
     }
 }

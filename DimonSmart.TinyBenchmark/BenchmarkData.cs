@@ -36,4 +36,13 @@ public class BenchmarkData
     /// To obtain more discernible results, this property allows measuring a batch of executions at once.
     /// </summary>
     public int BatchSize { get; set; } = 5;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether to organize test results into subfolders.
+    /// When enabled, subfolders are created under the main results folder, with each subfolder named after its corresponding test class.
+    /// </summary>
+    /// <value>
+    /// <c>true</c> to create subfolders for each test class; otherwise, <c>false</c>. Default is <c>true</c>.
+    /// </value>
+    public bool ResultSubfolders { get; set; } = true;
 }
