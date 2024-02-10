@@ -9,7 +9,7 @@ public class StringVsStringBuilderBenchmark : VsBenchmarkBase
     public int BenchmarkParameter { get; set; }
 
     [TinyBenchmark]
-    public void StringPlus(int parameter)
+    public void StringConcatenation(int parameter)
     {
         var s = string.Empty;
         for (var i = 0; i < parameter; i++) s += AllNames[i];

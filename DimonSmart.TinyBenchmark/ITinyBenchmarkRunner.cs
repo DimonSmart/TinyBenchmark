@@ -54,6 +54,14 @@ public interface ITinyBenchmarkRunner
     ITinyBenchmarkRunner WithResultSubfolders(bool resultSubfolders = true);
 
     /// <summary>
+    /// Measure memory consumption.
+    /// NOTE! Memory consumption benchmarking could be slow.
+    /// </summary>
+    /// <param name="benchmarkMemory"></param>
+    /// <returns></returns>
+    ITinyBenchmarkRunner WithMemoryBenchmarking(bool benchmarkMemory = true);
+
+    /// <summary>
     /// Executes the benchmark and returns the results.
     /// </summary>
     /// <returns>An IResultProcessor containing the benchmark results.</returns>

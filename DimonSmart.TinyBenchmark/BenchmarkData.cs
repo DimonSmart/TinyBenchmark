@@ -45,4 +45,9 @@ public class BenchmarkData
     /// <c>true</c> to create subfolders for each test class; otherwise, <c>false</c>. Default is <c>true</c>.
     /// </value>
     public bool ResultSubfolders { get; set; } = true;
+
+    /// <summary>
+    /// Benchmark memory consumption
+    /// </summary>
+    public bool BenchmarkMemory { get; set; } = false;
 }

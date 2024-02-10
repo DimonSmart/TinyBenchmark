@@ -23,6 +23,12 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         return this;
     }
 
+    public ITinyBenchmarkRunner WithMemoryBenchmarking(bool benchmarkMemory = true)
+    {
+        _data.BenchmarkMemory = benchmarkMemory;
+        return this;
+    }
+
     public IResultProcessor Run(params Type[] types)
     {
         var resultFolderPath = Path.Combine(Directory.GetCurrentDirectory(), ExporterBaseClass.ResultsFolder);
@@ -31,7 +37,7 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         var methods = GetMethodExecutionInformation(types);
         var classesCount = methods.Select(m => m.ClassType).Distinct().Count();
         Log($"Run TinyBenchmark for:{classesCount} classes");
-        var results = methods.ToDictionary(m => m, _ => new List<MethodExecutionNumbers>(1000000));
+        var results = methods.ToDictionary(m => m, _ => new List<MethodExecutionMetrics>(1000000));
 
         GcFull();
 
@@ -60,7 +66,7 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
             }
 
             var (timeLimitReached, measureTime) = MeasureFunctionCycle(method, results, methodTimeLimit,
-                _data.MinFunctionExecutionCount, _data.MaxFunctionExecutionCount, _data.BenchmarkDurationLimit);
+                _data.MinFunctionExecutionCount, _data.MaxFunctionExecutionCount, _data.BenchmarkDurationLimit, _data.BenchmarkMemory);
 
             if (timeLimitReached)
             {
@@ -131,19 +137,20 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
     }
 
     private static (bool TimeLimitReached, TimeSpan measureTime) MeasureFunctionCycle(MethodExecutionInformation method,
-        IReadOnlyDictionary<MethodExecutionInformation, List<MethodExecutionNumbers>> results,
+        IReadOnlyDictionary<MethodExecutionInformation, List<MethodExecutionMetrics>> results,
         TimeSpan methodTimeLimit,
         int minFunctionExecutionCount,
         int? maxFunctionExecutionCount,
-        TimeSpan? timeLimit)
+        TimeSpan? timeLimit,
+        bool benchmarkMemory)
     {
         var iteration = 0;
         var stopwatch = Stopwatch.StartNew();
 
         while (true)
         {
-            var executionTime = MeasureExecutionTime(method.Action);
-            results[method].Add(executionTime);
+            var executionMetrics = MeasureFunctionMetrics(method.Action, benchmarkMemory);
+            results[method].Add(executionMetrics);
             iteration++;
 
             if (iteration >= minFunctionExecutionCount)
@@ -168,13 +175,13 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         return $"{methodInfo.ClassType.Name}.{methodInfo.MethodInfo.Name}({methodInfo.Parameter})";
     }
 
-    private void WarmUpCalculation(Dictionary<MethodExecutionInformation, List<MethodExecutionNumbers>> results)
+    private void WarmUpCalculation(Dictionary<MethodExecutionInformation, List<MethodExecutionMetrics>> results)
     {
         foreach (var result in results)
         {
             var (_, _) =
                 MeasureFunctionCycle(result.Key, results, TimeSpan.Zero, _data.MinFunctionExecutionCount, null,
-                    TimeSpan.MaxValue);
+                    TimeSpan.MaxValue, _data.BenchmarkMemory);
         }
     }
 
@@ -215,18 +222,32 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         GC.Collect();
     }
 
-    internal static MethodExecutionNumbers MeasureExecutionTime(Action action)
+    internal static MethodExecutionMetrics MeasureFunctionMetrics(Action action, bool benchmarkMemory)
     {
         var methodMeasureStopwatch = Stopwatch.StartNew();
-        //PrepareRun();
-        // GC.TryStartNoGCRegion(100 * 1024 * 1024);
+        long memoryBefore = 0;
+        long memoryAfter = 0;
+        if (benchmarkMemory)
+        {
+            GC.Collect(0, GCCollectionMode.Forced, true, false);
+            // memoryBefore = GC.GetTotalMemory(false);
+            memoryBefore = AppDomain.CurrentDomain.MonitoringTotalAllocatedMemorySize;
+        }
+
         var methodStopwatch = Stopwatch.StartNew();
         action();
         methodStopwatch.Stop();
+        
+        if (benchmarkMemory)
+        {
+            // memoryAfter = GC.GetTotalMemory(false);
+            memoryAfter = AppDomain.CurrentDomain.MonitoringTotalAllocatedMemorySize;
+        }
         methodMeasureStopwatch.Stop();
-        // GC.EndNoGCRegion();
-        // TODO: add GC time, mem etc if requested here
-        return new MethodExecutionNumbers(methodStopwatch.Elapsed, methodMeasureStopwatch.Elapsed);
+        return new MethodExecutionMetrics(
+            PureMethodTime: methodStopwatch.Elapsed,
+            MethodMeasureTime: methodMeasureStopwatch.Elapsed,
+            MemoryUsed: Math.Max(memoryAfter - memoryBefore, 0));
     }
 
     internal static IEnumerable<MethodExecutionInformation> GetMethodExecutionInformation(

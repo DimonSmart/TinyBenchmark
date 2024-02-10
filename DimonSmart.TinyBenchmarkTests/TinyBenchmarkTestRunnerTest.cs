@@ -31,6 +31,7 @@ public class TinyBenchmarkTestRunnerTest
             .WithMinFunctionExecutionCount(100)
             .WithMaxFunctionExecutionCount(10000)
             .WithResultSubfolders(true)
+            .WithMemoryBenchmarking()
             .Run(typeof(StringVsStringBuilderBenchmark))
             .WithCsvExporter()
                 .LimitResultLines(50)
