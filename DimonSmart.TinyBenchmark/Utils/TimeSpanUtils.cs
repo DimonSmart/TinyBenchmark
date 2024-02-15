@@ -25,8 +25,8 @@ public static class TimeSpanUtils
         return source.Select(selector).CalculatePercentile(percentile);
     }
 
-    public static TimeSpan BestResult(IEnumerable<TimeSpan> times)
+    public static TimeSpan BestResult<TSource>(this IEnumerable<TSource> source, Func<TSource, TimeSpan> selector)
     {
-        return times.Min();
+        return source.Select(selector).Min();
     }
 }

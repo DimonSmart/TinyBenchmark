@@ -1,6 +1,7 @@
 ﻿using DimonSmart.TinyBenchmark.Utils;
 using ScottPlot;
-using ScottPlot.Plottable;
+using ScottPlot.Plottables;
+using ScottPlot.TickGenerators;
 using static DimonSmart.TinyBenchmark.SortTimeDirection;
 using static DimonSmart.TinyBenchmark.Exporters.IGraphExporter;
 
@@ -103,51 +104,47 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         var classRunParameters = byFunction.First()
             .Select(f => f.Method.Parameter)
             .ToList();
-        var plot = new Plot(Width, Height);
+        var plot = new Plot();
         plot.XLabel("Run number");
         plot.YLabel("Time, μs");
         plot.Title($"{classType.Name}");
 
-        double[] dataX;
-        string[] labelX;
-        if (classRunParameters.Count == 0)
-        {
-            dataX = new double[] { 1 };
-            labelX = new[] { "1" };
-        }
-        else
-        {
-            dataX = classRunParameters.Select((value, index) => (double)index).ToArray();
-            labelX = classRunParameters.Select((value, index) => value?.ToString() ?? "X").ToArray();
-        }
+        var axisX = classRunParameters
+            .Select((value, index) => new { Key = index, Value = value })
+            .ToDictionary(pair => (double)pair.Key, pair => pair.Value?.ToString() ?? "X");
+        var labelX = axisX.Keys.ToArray();
 
-        plot.XAxis.ManualTickPositions(dataX, labelX);
+        plot.Axes.Bottom.TickGenerator = new NumericAutomatic
+        {
+            LabelFormatter = d => axisX.GetValueOrDefault(d, "!")
+        };
 
         foreach (var function in byFunction)
         {
             var dataY = function
                 .Select(f => f.Numbers.CalculatePercentile(i => i.PureMethodTime, 50).TotalNanoseconds)
                 .ToArray();
-            var scatter = plot.AddScatter(dataX, dataY, label: $"{function.Key}", lineWidth: 2);
+            var scatter = plot.Add.Scatter(labelX, dataY);
+            scatter.LineStyle.Width = 2;
             if (options == GraphExportOption.IncludeErrorMarks)
             {
                 AddErrorMarks(function, dataY, scatter);
             }
         }
 
-        plot.Legend();
+        plot.ShowLegend();
         var fileName = CreateResultFolderPathAndFileName(ComparisonFileNameTemplate, classType.Name);
-        plot.SaveFig(fileName);
+        plot.SavePng(fileName, Width, Height);
         return this;
 
-        void AddErrorMarks(IGrouping<string, MethodExecutionResults> function, double[] dataY, ScatterPlot scatter)
+        void AddErrorMarks(IGrouping<string, MethodExecutionResults> function, double[] dataY, Scatter scatter)
         {
             var dataDeltaMinus = function
-                .Select(f =>
-                    f.Numbers.CalculatePercentile(i => i.PureMethodTime, 50).TotalNanoseconds -
-                    f.Numbers.CalculatePercentile(i => i.PureMethodTime, 20).TotalNanoseconds)
-                .Select(f => f < 0 ? 0.0 : f)
-                .ToArray();
+               .Select(f =>
+                   f.Numbers.CalculatePercentile(i => i.PureMethodTime, 50).TotalNanoseconds -
+                   f.Numbers.CalculatePercentile(i => i.PureMethodTime, 20).TotalNanoseconds)
+               .Select(f => f < 0 ? 0.0 : f)
+               .ToArray();
 
             var dataDeltaPlus = function
                 .Select(f =>
@@ -156,15 +153,16 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
                 .Select(f => f < 0 ? 0.0 : f)
                 .ToArray();
 
-            plot.AddErrorBars(
-                dataX,
-                dataY,
+            plot.Add.Plottable(new ErrorBar(
+                xs: labelX,
+                ys: dataY,
                 xErrorsNegative: new double[dataY.Length],
                 xErrorsPositive: new double[dataY.Length],
                 yErrorsNegative: dataDeltaMinus,
-                yErrorsPositive: dataDeltaPlus,
-                color: scatter.Color
-            );
+                yErrorsPositive: dataDeltaPlus)
+            {
+                Color = scatter.Color
+            });
         }
     }
 
@@ -190,15 +188,15 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
             _ => dataY
         };
 
-        var plot = new Plot(Width, Height);
+        var plot = new Plot();
         plot.XLabel("Run number");
         plot.YLabel("Time, μs");
         plot.Title($"Raw data. {className}.{methodName}({rmExecutionResults.Method.Parameter})");
-        plot.AddScatter(dataX, dataY, label: "Raw timings");
-        plot.Legend();
+        plot.Add.Scatter(dataX, dataY); // Label
+        plot.ShowLegend();
         var fileName =
             SubstituteFilenameTemplate(RawDataFileNameTemplate, className, methodName, parameter, sortTimesDirection);
-        plot.SaveFig(fileName);
+        plot.SavePng(fileName, Width, Height);
         return this;
     }
 

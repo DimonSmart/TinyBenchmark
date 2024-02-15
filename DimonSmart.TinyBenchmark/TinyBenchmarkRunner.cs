@@ -237,7 +237,7 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         var methodStopwatch = Stopwatch.StartNew();
         action();
         methodStopwatch.Stop();
-        
+
         if (benchmarkMemory)
         {
             // memoryAfter = GC.GetTotalMemory(false);
