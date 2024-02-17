@@ -1,4 +1,6 @@
-﻿namespace DimonSmart.TinyBenchmark.Exporters;
+﻿using static DimonSmart.TinyBenchmark.SortTimeDirection;
+
+namespace DimonSmart.TinyBenchmark.Exporters;
 
 public interface IGraphExporter : IResultProcessor
 {
@@ -13,7 +15,7 @@ public interface IGraphExporter : IResultProcessor
     string RawDataFileNameTemplate { get; }
     IGraphExporter GraphSize(int width, int height);
     IGraphExporter SetRawDataFileNameTemplate(string fileNameTemplate);
-    IGraphExporter ExportAllRawGraph(SortTimeDirection sortTimesDirection = SortTimeDirection.UnsortedTimes);
+    IGraphExporter ExportAllRawGraph(SortTimeDirection sortTimesDirection = UnsortedTimes);
 
     IGraphExporter ExportRawGraph(string className, string methodName, object? parameter,
         SortTimeDirection sortTimesDirection);
