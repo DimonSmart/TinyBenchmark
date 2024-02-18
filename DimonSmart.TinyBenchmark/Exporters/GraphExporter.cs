@@ -122,10 +122,11 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         foreach (var function in byFunction)
         {
             var dataY = function
-                .Select(f => f.Numbers.CalculatePercentile(i => i.PureMethodTime, 50).TotalNanoseconds)
+                .Select(f => f.Numbers.CalculatePercentile(i => i.PureMethodTime, 50).TotalNanoseconds/Data.BatchSize)
                 .ToArray();
             var scatter = plot.Add.Scatter(labelX, dataY);
             scatter.LineStyle.Width = 2;
+            scatter.Label = $"{function.Key}";
             if (options == GraphExportOption.IncludeErrorMarks)
             {
                 AddErrorMarks(function, dataY, scatter);
@@ -142,15 +143,15 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
             var dataDeltaMinus = function
                .Select(f =>
                    f.Numbers.CalculatePercentile(i => i.PureMethodTime, 50).TotalNanoseconds -
-                   f.Numbers.CalculatePercentile(i => i.PureMethodTime, 20).TotalNanoseconds)
-               .Select(f => f < 0 ? 0.0 : f)
+                   f.Numbers.CalculatePercentile(i => i.PureMethodTime, 30).TotalNanoseconds)
+               .Select(f => f < 0 ? 0.0 : f / Data.BatchSize)
                .ToArray();
 
             var dataDeltaPlus = function
                 .Select(f =>
-                    f.Numbers.CalculatePercentile(i => i.PureMethodTime, 80).TotalNanoseconds -
+                    f.Numbers.CalculatePercentile(i => i.PureMethodTime, 70).TotalNanoseconds -
                     f.Numbers.CalculatePercentile(i => i.PureMethodTime, 50).TotalNanoseconds)
-                .Select(f => f < 0 ? 0.0 : f)
+                .Select(f => f < 0 ? 0.0 : f/Data.BatchSize)
                 .ToArray();
 
             plot.Add.Plottable(new ErrorBar(
@@ -192,7 +193,7 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         plot.XLabel("Run number");
         plot.YLabel("Time, μs");
         plot.Title($"Raw data. {className}.{methodName}({rmExecutionResults.Method.Parameter})");
-        plot.Add.Scatter(dataX, dataY); // Label
+        plot.Add.Scatter(dataX, dataY);
         plot.ShowLegend();
         var fileName =
             SubstituteFilenameTemplate(RawDataFileNameTemplate, className, methodName, parameter, sortTimesDirection);
