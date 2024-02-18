@@ -29,8 +29,7 @@
 
 	<ItemGroup>
 		<None Include="..\readme.md" Pack="true" PackagePath="\" />
-		<None Include="docs\Images\TinyBenchmark.png" Pack="True" PackagePath="\" />
-		<None Include="docs\Images\Compare-ExampleClassTest.png" Pack="True" PackagePath="\" />
+		<None Include="docs\Images\*.png" Pack="True" PackagePath="\" />
 	</ItemGroup>
 
 

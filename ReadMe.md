@@ -79,7 +79,7 @@ This graph shows the performance comparison of your functions. The X-axis repres
 [TinyBenchmarkParameter(1, 5, 10, 15, 20, 25)],
 ```
 and the Y-axis represents function execution time. All functions are labeled with their names.
-![Function comparision](https://raw.githubusercontent.com/DimonSmart/TinyBenchmark/master/DimonSmart.TinyBenchmark/Docs/Images/Compare-ExampleClassTest.png)
+![Function comparision](https://raw.githubusercontent.com/DimonSmart/TinyBenchmark/master/DimonSmart.TinyBenchmark/Docs/Images/Compare-StringVsStringBuilderBenchmark.png)
 
 ### Raw Execution Times
 This graph is useful for ensuring that your functions provide stable values over time.
