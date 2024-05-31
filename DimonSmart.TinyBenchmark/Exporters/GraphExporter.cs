@@ -126,7 +126,7 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
                 .ToArray();
             var scatter = plot.Add.Scatter(labelX, dataY);
             scatter.LineStyle.Width = 2;
-            scatter.Label = $"{function.Key}";
+            scatter.LegendText = $"{function.Key}";
             if (options == GraphExportOption.IncludeErrorMarks)
             {
                 AddErrorMarks(function, dataY, scatter);
@@ -179,7 +179,7 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
     {
         var className = rmExecutionResults.Method.ClassType.Name;
         var methodName = rmExecutionResults.Method.MethodInfo.Name;
-        var parameter = rmExecutionResults.Method.Parameter;
+        var parameter = rmExecutionResults.Method.Parameter ?? "void";
         var dataX = rmExecutionResults.Numbers.Select((_, index) => (double)(index + 1)).ToArray();
         var dataY = rmExecutionResults.Numbers.Select(t => t.PureMethodTime.TotalNanoseconds).ToArray();
         dataY = sortTimesDirection switch
@@ -192,7 +192,7 @@ public class GraphExporter : ExporterBaseClass, IGraphExporter
         var plot = new Plot();
         plot.XLabel("Run number");
         plot.YLabel("Time, μs");
-        plot.Title($"Raw data. {className}.{methodName}({rmExecutionResults.Method.Parameter})");
+        plot.Title($"Raw data. {className}.{methodName}({rmExecutionResults.Method.Parameter ?? "void"})");
         plot.Add.Scatter(dataX, dataY);
         plot.ShowLegend();
         var fileName =
