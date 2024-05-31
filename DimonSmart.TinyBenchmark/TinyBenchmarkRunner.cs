@@ -11,6 +11,15 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
     private readonly BenchmarkData _data = new();
     private Action<string>? _writeMessage;
 
+    public ITinyBenchmarkRunner WithBatchSize(int batchSize = 5)
+    {
+        if (batchSize < 1)
+           throw new ArgumentException("Batch size must be greater than or equal to 1.", nameof(batchSize));
+
+        _data.BatchSize = batchSize;
+        return this;
+    }
+
     public ITinyBenchmarkRunner WithLogger(Action<string> writeMessage)
     {
         _writeMessage = writeMessage;
@@ -212,7 +221,6 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         return executionInformation;
     }
 
-
     private static void GcFull()
     {
         GC.Collect();
@@ -254,7 +262,7 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
         object[]? parameters, MethodInfo methodInfo, object instance, Type classType, int batchSize)
     {
         var methodExecutionInformation = new List<MethodExecutionInformation>();
-        if (parameters != null)
+        if (parameters != null && methodInfo.GetParameters().Length > 0)
         {
             foreach (var parameterAttributeValue in parameters)
             {
@@ -269,13 +277,14 @@ public class TinyBenchmarkRunner : ITinyBenchmarkRunner
                 }
             }
         }
-        else
+        else if (methodInfo.GetParameters().Length == 0)
         {
-            methodExecutionInformation.Add(new MethodExecutionInformation(classType, methodInfo, null, Action));
+            var methodExecutionInfo = new MethodExecutionInformation(classType, methodInfo, null, Action);
+            methodExecutionInformation.Add(methodExecutionInfo);
 
             void Action()
             {
-                methodInfo.Invoke(instance, null);
+                for (var i = 0; i < batchSize; i++) methodInfo.Invoke(instance, null);
             }
         }
 

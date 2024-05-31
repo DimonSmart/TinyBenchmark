@@ -5,7 +5,7 @@ namespace DimonSmart.TinyBenchmarkTests.BenchmarkSamples;
 
 public class StringVsStringBuilderBenchmark : VsBenchmarkBase
 {
-    [TinyBenchmarkRangeParameter(1, 32)]
+    [TinyBenchmarkRangeParameter(1, 32, 1)]
     public int BenchmarkParameter { get; set; }
 
     [TinyBenchmark]

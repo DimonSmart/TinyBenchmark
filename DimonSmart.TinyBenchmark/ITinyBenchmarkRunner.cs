@@ -4,6 +4,16 @@ namespace DimonSmart.TinyBenchmark;
 
 public interface ITinyBenchmarkRunner
 {
+
+    /// <summary>
+    /// Configures the number of times a function is executed in each batch during microbenchmarking 
+    /// to accumulate a valuable result. The default value is 5. 
+    /// For fast functions, a higher value up to 10,000 may be more appropriate.
+    /// </summary>
+    /// <param name="batchSize">The number of times each function is run per batch. Default is 5.</param>
+    /// <returns>An instance of ITinyBenchmarkRunner for method chaining.</returns>
+    ITinyBenchmarkRunner WithBatchSize(int batchSize = 5);
+
     /// <summary>
     /// Sets a maximum time limit for benchmarking. Note that exporting all raw results,
     /// especially for small and fast functions, can significantly increase the total execution time.

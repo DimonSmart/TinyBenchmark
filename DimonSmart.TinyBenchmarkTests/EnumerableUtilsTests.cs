@@ -1,8 +1,26 @@
 ﻿using DimonSmart.TinyBenchmark.Utils;
+using System.Security.AccessControl;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace DimonSmart.TinyBenchmarkTests;
+
+
+public class SimpleBaseClass
+{   
+    public virtual int GetNumber(int x) => 1;
+}
+
+public class NonSealedSimple : SimpleBaseClass
+{ 
+    public override int GetNumber(int x) => x * 2;
+}
+
+public sealed class SealedSimple : SimpleBaseClass
+{
+    public override int GetNumber(int x) => 2;
+}
+
 
 public class EnumerableUtilsTests
 {
