@@ -132,11 +132,10 @@ public class ModernExecutionTests
     {
         MaximumQuotaBenchmark.Calls = 0;
 
-        var exception = Assert.Throws<InvalidOperationException>(() => TinyBenchmarkRunner.Create()
+        var exception = Assert.Throws<ArgumentOutOfRangeException>(() => TinyBenchmarkRunner.Create()
             .WithMaxFunctionExecutionCount(2)
             .Run(benchmarkType));
 
-        Assert.Contains("explicitly configured legacy maximum", exception.Message);
         Assert.Equal(0, MaximumQuotaBenchmark.Calls);
     }
 
