@@ -19,8 +19,30 @@ public class TinyBenchmarkRangeParameterAttribute : TinyBenchmarkParameterAttrib
     /// <param name="step">The optional step size between values in the range (default is 1).</param>
     public TinyBenchmarkRangeParameterAttribute(int from, int to, int step = 1)
     {
-        var values = new List<object>(to - from);
-        for (var i = from; i < to; i += step) values.Add(i);
+        if (from >= to)
+        {
+            throw new ArgumentOutOfRangeException(nameof(to), to,
+                "Range upper bound must be greater than the lower bound.");
+        }
+
+        if (step <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(step), step, "Range step must be positive.");
+        }
+
+        var values = new List<object>();
+        for (var value = from; value < to;)
+        {
+            values.Add(value);
+
+            var next = (long)value + step;
+            if (next >= to)
+            {
+                break;
+            }
+
+            value = checked((int)next);
+        }
 
         Values = values.ToArray();
     }

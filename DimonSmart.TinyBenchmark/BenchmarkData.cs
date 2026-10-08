@@ -27,6 +27,11 @@ public class BenchmarkData
     public int? MaxFunctionExecutionCount { get; internal set; } = 10000;
 
     /// <summary>
+    /// Gets whether the legacy maximum was selected explicitly by the caller.
+    /// </summary>
+    internal bool HasExplicitMaxFunctionExecutionCount { get; set; }
+
+    /// <summary>
     /// Gets the results of method execution.
     /// </summary>
     public IList<MethodExecutionResults> Results { get; internal set; } = new List<MethodExecutionResults>();
@@ -50,4 +55,10 @@ public class BenchmarkData
     /// Benchmark memory consumption
     /// </summary>
     public bool BenchmarkMemory { get; set; } = false;
+
+    /// <summary>
+    /// Explicit raw-sample retention choice. A missing value preserves the legacy default while
+    /// modern benchmarks default to summary-only results.
+    /// </summary>
+    public BenchmarkSampleRetentionMode? SampleRetentionMode { get; internal set; }
 }

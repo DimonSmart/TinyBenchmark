@@ -1,14 +1,13 @@
 ﻿namespace DimonSmart.TinyBenchmark.Attributes;
 
 /// <summary>
-/// Attribute to be applied to methods that should be benchmarked. When this attribute is applied to a method,
-/// it indicates that the method is a benchmark and should be included in the benchmarking process.
+/// Marks a method for the legacy TinyBenchmark compatibility execution mode.
 /// </summary>
 /// <remarks>
-/// Make sure to mark all methods that you want to be part of the benchmarking process with this attribute.
-/// This attribute helps the TinyBenchmark library identify and include specific methods for performance measurement.
+/// This mode keeps the established fluent repetition and RAW-export behavior. New benchmarks should select one
+/// of the explicit strategy attributes instead.
 /// </remarks>
-[AttributeUsage(AttributeTargets.Method, Inherited = false)]
-public sealed class TinyBenchmarkAttribute : Attribute
+[AttributeUsage(AttributeTargets.Method, Inherited = true)]
+public class TinyBenchmarkAttribute : Attribute
 {
 }
